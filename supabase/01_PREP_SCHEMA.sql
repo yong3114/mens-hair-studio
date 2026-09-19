@@ -62,13 +62,42 @@ create table if not exists public.appointments (
  notes text, created_by uuid references public.profiles(id) default auth.uid(), created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
-do $$ begin
-  alter table public.appointments add constraint appointment_no_overlap
-  exclude using gist (
-    assigned_user_id with =,
-    tstzrange(scheduled_at - make_interval(mins => travel_buffer_before), scheduled_at + make_interval(mins => duration_min + travel_buffer_after), '[)') with &&
-  ) where (status in ('tentative','confirmed'));
-exception when duplicate_object then null; end $$;
+-- Appointment booking window is materialized in ordinary columns because
+-- PostgreSQL exclusion-index expressions must be IMMUTABLE. Arithmetic on
+-- timestamptz + interval is STABLE, so doing that arithmetic directly inside
+-- the GiST exclusion expression fails on PostgreSQL/Supabase.
+alter table public.appointments add column if not exists blocked_start timestamptz;
+alter table public.appointments add column if not exists blocked_end timestamptz;
+
+create or replace function public.set_appointment_block_window() returns trigger
+language plpgsql as $$
+begin
+  new.blocked_start := new.scheduled_at - (new.travel_buffer_before * interval '1 minute');
+  new.blocked_end := new.scheduled_at + ((new.duration_min + new.travel_buffer_after) * interval '1 minute');
+  return new;
+end $$;
+
+drop trigger if exists trg_appointments_block_window on public.appointments;
+create trigger trg_appointments_block_window
+before insert or update
+on public.appointments
+for each row execute function public.set_appointment_block_window();
+
+-- Backfill rows that may already exist (also makes reruns safe after a partial setup).
+update public.appointments
+set blocked_start = scheduled_at - (travel_buffer_before * interval '1 minute'),
+    blocked_end = scheduled_at + ((duration_min + travel_buffer_after) * interval '1 minute')
+where blocked_start is null or blocked_end is null;
+
+alter table public.appointments alter column blocked_start set not null;
+alter table public.appointments alter column blocked_end set not null;
+
+alter table public.appointments drop constraint if exists appointment_no_overlap;
+alter table public.appointments add constraint appointment_no_overlap
+exclude using gist (
+  assigned_user_id with =,
+  tstzrange(blocked_start, blocked_end, '[)') with &&
+) where (status in ('tentative','confirmed'));
 
 create table if not exists public.services (
  id uuid primary key default gen_random_uuid(), customer_id uuid not null references public.customers(id) on delete cascade,

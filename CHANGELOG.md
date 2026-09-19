@@ -19,3 +19,9 @@
 - Added repository secrets setup guide.
 - Kept relative Vite base (`./`) for repository-subpath deployment and easier future migration.
 - Added local production build test batch file.
+
+
+## v2.0.1
+- Fixed Supabase/PostgreSQL `42P17 functions in index expression must be marked IMMUTABLE` when creating `appointment_no_overlap`.
+- Appointment overlap protection now uses trigger-maintained `blocked_start` / `blocked_end` columns and a GiST exclusion constraint.
+- Setup SQL is safe to rerun after the previous partial failure.

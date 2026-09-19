@@ -1,3 +1,10 @@
+# Changelog
+
+## V2.0.3
+- Fixed Google Places Autocomplete 400 error caused by an invalid 70 km location-bias radius.
+- JB location bias is now 35 km, within Google's 50 km maximum.
+- No database/schema changes.
+
 # V2.0.0 — SVR-style rebuild
 - Rebuilt as React + Vite app instead of one giant local HTML file.
 - Normalized Supabase tables instead of one cloud blob.

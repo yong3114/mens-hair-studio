@@ -113,7 +113,7 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
           input: text,
           sessionToken: tokenRef.current,
           includedRegionCodes: ['my'],
-          locationBias: { center: { lat: 1.4927, lng: 103.7414 }, radius: 70000 },
+          locationBias: { center: { lat: 1.4927, lng: 103.7414 }, radius: 35000 },
           region: 'my'
         })
         if (currentRequest !== requestIdRef.current) return

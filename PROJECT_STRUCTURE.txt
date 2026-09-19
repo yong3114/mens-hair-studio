@@ -1,0 +1,33 @@
+MEN'S HAIR STUDIO OFFICIAL V2 - GITHUB EDITION
+==============================================
+
+.github/
+  workflows/
+    deploy.yml                 GitHub Pages auto deploy
+
+src/
+  components/
+  lib/
+  pages/
+  App.jsx
+  main.jsx
+  styles.css
+
+supabase/
+  01_PREP_SCHEMA.sql
+  02_FINAL_RLS_LOCKDOWN.sql
+
+.env.example
+.gitignore
+01_RUN_LOCAL.bat
+02_TEST_PRODUCTION_BUILD.bat
+GITHUB_SETUP_STEP_BY_STEP_CN.md
+GITHUB_SECRETS_TEMPLATE.txt
+GOOGLE_MAPS_SETUP_CN.md
+MIGRATION_NOTE_V1_5.txt
+README_FIRST_CN.md
+TEST_CHECKLIST.txt
+VALIDATION_REPORT.txt
+index.html
+package.json
+vite.config.js

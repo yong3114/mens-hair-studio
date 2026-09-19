@@ -1,0 +1,29 @@
+MEN'S HAIR STUDIO V2 - GITHUB EDITION
+VALIDATION REPORT
+====================================
+
+Packaging / structure:
+PASS - React/Vite source present
+PASS - Supabase SQL present
+PASS - GitHub Actions workflow present
+PASS - GitHub deployment guide present
+PASS - GitHub secrets template present
+PASS - Local run batch present
+PASS - Local production build test batch present
+PASS - .env excluded by .gitignore
+PASS - Hostinger deployment batch removed from this edition
+
+Deployment design:
+PASS - Workflow triggers on main branch push and manual dispatch
+PASS - Pages write + id-token permissions configured
+PASS - Build-time Vite environment values read from GitHub Actions Secrets
+PASS - dist folder uploaded as GitHub Pages artifact
+PASS - Vite uses relative base './' for repo-subpath/static deployment compatibility
+
+Important limitation:
+This environment could not complete npm install because package registry access timed out.
+Therefore a real Vite production build is NOT claimed as verified here.
+Run 02_TEST_PRODUCTION_BUILD.bat on the user's Windows machine or let GitHub Actions perform the first real build.
+
+Supabase / Google:
+Real cloud CRUD and Google Places calls require the user's own project credentials and must be tested after setup.

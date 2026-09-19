@@ -1,0 +1,15 @@
+IMPORTANT — ABOUT YOUR OLD V1.5 SUPABASE DATA
+
+V1.5 stored almost the whole studio inside ONE `studio_state.data` JSON blob.
+V2.0 is rebuilt properly like SVR Inventory: separate real tables for leads, customers, appointments, services, inventory, payments, media and activity.
+
+Because the architecture is different, V2.0 intentionally does NOT silently read/write the old `studio_state` blob.
+
+Recommended clean path:
+1. Keep the old V1.5 Supabase project untouched as backup.
+2. Create a NEW Supabase project for V2.0.
+3. Run `supabase/01_PREP_SCHEMA.sql`.
+4. Test V2.0 fully.
+5. If the old V1.5 project contains real business records you need, migrate them deliberately after V2.0 is confirmed.
+
+Do NOT delete the old V1.5 project until you are sure you no longer need its data.

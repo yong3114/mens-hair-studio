@@ -1,84 +1,42 @@
-MEN'S HAIR STUDIO V2.0 — TEST CHECKLIST
+MEN'S HAIR STUDIO V2.1 — END-TO-END SMOKE TEST
 
-A. LOGIN / CLOUD
-[ ] Yong can login
-[ ] Ah Bi can login
-[ ] Yong adds data; Ah Bi can see it
+DO THIS AS ONE CUSTOMER JOURNEY
+================================
 
-B. LEAD CRM
-[ ] Add Lead
-[ ] Edit Lead
-[ ] WhatsApp button opens
-[ ] Convert Lead → Customer
-[ ] Converted customer appears in Customers
+[ ] 1. Create Lead with ONLY WhatsApp display name.
+[ ] 2. Convert Lead → Customer without a real name.
+[ ] 3. Customer profile shows WhatsApp identity correctly.
+[ ] 4. Book appointment from Customer.
+[ ] 5. Calendar Month / Week / Day all show the booking.
+[ ] 6. Edit booking Date + Start time and save.
+[ ] 7. Desktop: drag booking to another date/time; Calendar updates.
+[ ] 8. Mobile: tap booking, edit Date/Start time; save.
+[ ] 9. Double-booking same admin/time is blocked.
+[ ] 10. Home visit travel buffers also block conflicting time.
+[ ] 11. Start Service from booking; appointment becomes In Progress.
+[ ] 12. Complete Service with amount + next maintenance.
+[ ] 13. Calendar booking becomes Completed.
+[ ] 14. Completed service appears in Customer Service History.
+[ ] 15. Consumables selected during completion are deducted.
+[ ] 16. Payment is created when amount > 0.
+[ ] 17. Outstanding payment can be Mark Paid.
+[ ] 18. Upload Before + After linked to the same completed service.
+[ ] 19. Before / After Compare view shows the pair.
+[ ] 20. Mobile camera upload works.
+[ ] 21. Google address autocomplete / Maps / Waze still work.
+[ ] 22. When next maintenance is due, Service → Follow-up shows customer.
+[ ] 23. Follow-up → Book next visit opens Calendar booking flow.
+[ ] 24. Yong changes are visible to Ah Bi and vice versa.
 
-C. CUSTOMER + GOOGLE ADDRESS
-[ ] New Customer
-[ ] Type partial address; Google suggestions appear
-[ ] Select a suggestion; full address auto-fills
-[ ] Saved customer retains place name / lat / lng
-[ ] Google Maps button opens correct place
-[ ] Waze button opens navigation
+DEPLOYMENT
+==========
+[ ] GitHub Actions build ✅
+[ ] GitHub Actions deploy ✅
+[ ] Production website Ctrl+Shift+R
+[ ] Desktop UI usable
+[ ] Phone UI usable
 
-D. APPOINTMENT
-[ ] Calendar view
-[ ] Agenda view
-[ ] Map view
-[ ] Book Studio appointment
-[ ] Book Home Visit
-[ ] Customer saved address auto-fills
-[ ] Google address autocomplete can choose a different appointment address
-[ ] Double-booking same admin/time is blocked
-[ ] Travel buffer is included in conflict check
-
-E. INVENTORY
-[ ] Stock in Hair System
-[ ] Unique HS code generated
-[ ] Install Hair System to customer
-[ ] Add Consumable
-[ ] Adjust Consumable + / -
-[ ] Cannot reduce below zero
-
-F. SERVICE FLOW
-[ ] Select Customer
-[ ] Choose Yong / Ah Bi
-[ ] Add Consumables used
-[ ] Complete Service
-[ ] Consumables deduct automatically
-[ ] Payment created automatically if amount > 0
-[ ] Next Maintenance date saved
-
-G. PAYMENT / CREDIT
-[ ] Add Paid payment
-[ ] Add Outstanding payment
-[ ] Customer profile totals look correct
-[ ] Account credit top-up/use works
-
-H. MEDIA
-[ ] Upload Before photo
-[ ] Upload Process photo
-[ ] Upload After photo
-[ ] Consent saved
-[ ] Signed private image loads
-
-I. ACTIVITY LOG
-[ ] Yong actions show Yong
-[ ] Ah Bi actions show Ah Bi
-
-J. RESPONSIVE UI
-[ ] Desktop sidebar
-[ ] iPad / tablet layout
-[ ] Mobile bottom navigation
-[ ] Forms usable on phone
-[ ] Calendar scroll/agenda usable on phone
-
-K. DEPLOYMENT
-[ ] npm run build passes
-[ ] dist uploaded to Hostinger
-[ ] Production domain loads
-[ ] Google autocomplete works on production domain
-[ ] Yong / Ah Bi cloud sync works on production
-
-ONLY AFTER ALL ABOVE PASS:
+ONLY AFTER REAL USE IS STABLE
+=============================
 [ ] Run supabase/02_FINAL_RLS_LOCKDOWN.sql
-[ ] Retest Yong and Ah Bi
+[ ] Retest Yong + Ah Bi after RLS lockdown

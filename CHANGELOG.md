@@ -1,34 +1,53 @@
 # Changelog
 
+## V2.1.0 — Workflow + Calendar Rebuild
+
+### Lead / Customer
+- Lead can start with only WhatsApp display name; real name and phone are optional.
+- Lead conversion preserves WhatsApp identity and does not invent a real name when it is unknown.
+- Customer cards/profile use a safe display fallback: real name → WhatsApp name → phone.
+- Clear Book Appointment vs Start Service explanation in Customer Profile.
+
+### Calendar / Appointment
+- Rebuilt Calendar with Month / Week / Day / Agenda / Map.
+- Click empty date/time to create a booking.
+- Click booking to open details.
+- Separate Date + Start Time fields for easy rescheduling.
+- Desktop drag/drop to reschedule Month / Week / Day bookings.
+- Booking details use an Asana-style right-side pane on desktop and bottom sheet on mobile.
+- Month/Week consistently start Monday.
+- Team filter, Today navigation and date jump retained.
+- In-progress appointments stay blocked by database overlap protection.
+
+### Service
+- Service is now explicitly actual work, not another booking form.
+- Booked appointment → Start Service → In Progress → Complete.
+- Walk-in Service automatically creates a Calendar appointment first.
+- Completion updates Calendar appointment to Completed.
+- Completion records service history, payment, consumable deductions and next maintenance.
+- Completion screen offers Customer / Before-After / Book next visit.
+- Added Follow-up tab for due maintenance.
+
+### Before / After
+- Functional upload flow with Customer + Service association.
+- Before / Process / After types.
+- Consent: private / public blur / public.
+- Gallery, Compare, signed private images, delete, mobile camera capture.
+
+### Payments
+- All / Outstanding / Paid / Refund filters.
+- Search by customer/method/reference.
+- One-tap Mark Paid for outstanding payments.
+
+### UI / Mobile
+- Reworked visual hierarchy, spacing, typography, forms, cards and tactile buttons.
+- Desktop sidebar retained; mobile bottom nav reduced to 5 primary actions.
+- Mobile forms and booking details become bottom-sheet style.
+- Calendar defaults to Day on smaller screens; Month/Week remain available.
+
 ## V2.0.3
-- Fixed Google Places Autocomplete 400 error caused by an invalid 70 km location-bias radius.
-- JB location bias is now 35 km, within Google's 50 km maximum.
-- No database/schema changes.
+- Fixed Google Places Autocomplete 400 error caused by invalid location-bias radius.
+- JB location bias set to 35 km.
 
-# V2.0.0 — SVR-style rebuild
-- Rebuilt as React + Vite app instead of one giant local HTML file.
-- Normalized Supabase tables instead of one cloud blob.
-- Separate authenticated Yong / Ah Bi admin profiles.
-- Google Places Autocomplete (new widget) with Malaysia restriction and JB bias.
-- Customer saved place data: formatted address, place name, Google place ID, lat/lng.
-- Appointment Calendar / Agenda / Map views.
-- Database-level no-overlap appointment rule including travel buffers.
-- Hair system inventory + consumable movement flow.
-- Atomic service completion with consumable deduction and payment creation.
-- Private Supabase Storage media bucket.
-- Database-triggered activity log.
-- Staged RLS: PREP for testing, FINAL lockdown after validation.
-- Desktop sidebar + mobile bottom navigation.
-
-## V2.0 GitHub Edition
-- Replaced Hostinger deployment instructions with GitHub Pages development deployment.
-- Added GitHub Actions auto-build + deploy workflow.
-- Added repository secrets setup guide.
-- Kept relative Vite base (`./`) for repository-subpath deployment and easier future migration.
-- Added local production build test batch file.
-
-
-## v2.0.1
-- Fixed Supabase/PostgreSQL `42P17 functions in index expression must be marked IMMUTABLE` when creating `appointment_no_overlap`.
-- Appointment overlap protection now uses trigger-maintained `blocked_start` / `blocked_end` columns and a GiST exclusion constraint.
-- Setup SQL is safe to rerun after the previous partial failure.
+## V2.0.1
+- Fixed PostgreSQL 42P17 appointment exclusion constraint by materializing blocked_start / blocked_end.

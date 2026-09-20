@@ -1,33 +1,39 @@
-MEN'S HAIR STUDIO OFFICIAL V2 - GITHUB EDITION
-==============================================
+MEN'S HAIR STUDIO V2.1
 
-.github/
-  workflows/
-    deploy.yml                 GitHub Pages auto deploy
+.github/workflows/deploy.yml        GitHub Pages auto-deploy
+.env.example                       Local config template
+01_RUN_LOCAL.bat                   Local development
+02_TEST_PRODUCTION_BUILD.bat       Local Vite production build check
+V2.1_UPDATE_STEP_BY_STEP_CN.md     Existing V2.0.x upgrade instructions
+README_FIRST_CN.md                 V2.1 overview
+TEST_CHECKLIST.txt                 One end-to-end business-flow test
+VALIDATION_REPORT.txt              Static / helper validation report
 
 src/
+  App.jsx                          Cross-page workflow routing
   components/
+    Layout.jsx                     Desktop sidebar / mobile bottom nav
+    UI.jsx                         Modal / Drawer / Fields / Tabs / Badges
+    PlaceAutocomplete.jsx          Working Google Places autocomplete
   lib/
+    api.js                         Supabase data / RPC layer
+    calendar.js                    Month / Week / Day scheduling helpers
+    utils.js                       Date / identity / Maps helpers
   pages/
-  App.jsx
-  main.jsx
-  styles.css
+    Leads.jsx
+    Customers.jsx
+    CustomerDetail.jsx
+    Appointments.jsx               Month / Week / Day / Agenda / Map
+    Services.jsx                   Booking → Start → Complete / Follow-up
+    Inventory.jsx
+    Payments.jsx
+    Media.jsx                      Before / Process / After
+    Dashboard.jsx
+    Activity.jsx
+    Settings.jsx
+  styles.css                       Desktop / tablet / mobile design system
 
 supabase/
-  01_PREP_SCHEMA.sql
-  02_FINAL_RLS_LOCKDOWN.sql
-
-.env.example
-.gitignore
-01_RUN_LOCAL.bat
-02_TEST_PRODUCTION_BUILD.bat
-GITHUB_SETUP_STEP_BY_STEP_CN.md
-GITHUB_SECRETS_TEMPLATE.txt
-GOOGLE_MAPS_SETUP_CN.md
-MIGRATION_NOTE_V1_5.txt
-README_FIRST_CN.md
-TEST_CHECKLIST.txt
-VALIDATION_REPORT.txt
-index.html
-package.json
-vite.config.js
+  01_PREP_SCHEMA.sql               Fresh V2.1 project only
+  02_FINAL_RLS_LOCKDOWN.sql        Run only after real testing
+  03_V2_1_WORKFLOW_MIGRATION.sql   Existing V2.0.x → V2.1

@@ -1,29 +1,66 @@
-MEN'S HAIR STUDIO V2 - GITHUB EDITION
-VALIDATION REPORT
-====================================
+MEN'S HAIR STUDIO V2.1 — VALIDATION REPORT
+==========================================
 
-Packaging / structure:
-PASS - React/Vite source present
-PASS - Supabase SQL present
-PASS - GitHub Actions workflow present
-PASS - GitHub deployment guide present
-PASS - GitHub secrets template present
-PASS - Local run batch present
-PASS - Local production build test batch present
-PASS - .env excluded by .gitignore
-PASS - Hostinger deployment batch removed from this edition
+SOURCE / STRUCTURE
+------------------
+PASS - 21 JavaScript / JSX files parsed with TypeScript parser; 0 syntax errors.
+PASS - All relative imports resolve to existing files.
+PASS - All locally named imports checked against local module exports; 0 missing symbols.
+PASS - React/Vite project structure present.
+PASS - GitHub Pages workflow retained.
+PASS - Supabase PREP / FINAL RLS / V2.1 migration SQL included.
+PASS - .env remains excluded by .gitignore.
 
-Deployment design:
-PASS - Workflow triggers on main branch push and manual dispatch
-PASS - Pages write + id-token permissions configured
-PASS - Build-time Vite environment values read from GitHub Actions Secrets
-PASS - dist folder uploaded as GitHub Pages artifact
-PASS - Vite uses relative base './' for repo-subpath/static deployment compatibility
+WORKFLOW HELPER TESTS
+---------------------
+PASS - Lead display fallback works when only WhatsApp display name is known.
+PASS - Customer display fallback works without real name / phone.
+PASS - Appointment Date + Start Time converts to expected local datetime.
+PASS - Duration and travel buffers convert to numeric values.
+PASS - Month grid returns 42 cells and starts Monday.
+PASS - Week view returns 7 days and starts Monday.
+PASS - Week database query range is exactly 7 days.
+PASS - Day/Week slot generator returns 08:00–22:00 half-hour slots.
 
-Important limitation:
-This environment could not complete npm install because package registry access timed out.
-Therefore a real Vite production build is NOT claimed as verified here.
-Run 02_TEST_PRODUCTION_BUILD.bat on the user's Windows machine or let GitHub Actions perform the first real build.
+V2.1 WORKFLOW DESIGN CHECK
+--------------------------
+PASS - Lead can be saved with WhatsApp display name only.
+PASS - Lead conversion does not fabricate a real customer name when unknown.
+PASS - Calendar has Month / Week / Day / Agenda / Map views.
+PASS - Booking editor has separate Date and Start Time fields.
+PASS - Calendar supports click-to-create and desktop drag/drop rescheduling.
+PASS - Booking details use desktop side pane + mobile bottom sheet.
+PASS - Walk-in Service creates an Appointment before starting Service.
+PASS - Booked Service links to existing Appointment.
+PASS - Service completion sends appointment to Completed and stores next maintenance.
+PASS - Service Follow-up tab surfaces due maintenance and Book next visit.
+PASS - Active Service can add a Before/Process photo before completion.
+PASS - Service completion can open an After-photo flow.
+PASS - Before/After library supports upload, gallery, compare and delete.
+PASS - Payments support status filters and Mark Paid.
 
-Supabase / Google:
-Real cloud CRUD and Google Places calls require the user's own project credentials and must be tested after setup.
+SQL STATIC CHECK
+----------------
+PASS - V2.1 migration includes WhatsApp identity columns.
+PASS - Appointment status includes in_progress.
+PASS - appointment_no_overlap continues blocking tentative / confirmed / in_progress.
+PASS - Service status supports in_progress / completed / cancelled.
+PASS - Migration includes convert_lead_to_customer_v2, start_service and complete_service.
+PASS - Migration terminates with V2_1_WORKFLOW_MIGRATION_OK.
+PASS - SQL dollar-quoted function blocks are paired.
+
+KNOWN VALIDATION LIMITS
+-----------------------
+- This container cannot install the npm dependencies offline because the npm cache does not contain @supabase/supabase-js.
+- Therefore this report does NOT claim a local Vite production build.
+- The real build gate is the user's GitHub Actions workflow after push.
+- The V2.1 SQL migration has been statically reviewed here, but must be executed on the user's actual Supabase project to validate that project's current data/schema state.
+- Real cloud CRUD, Storage upload, Google Places and multi-device behavior require the user's existing production credentials and environment.
+
+RECOMMENDED RELEASE GATE
+------------------------
+1. Run supabase/03_V2_1_WORKFLOW_MIGRATION.sql and require V2_1_WORKFLOW_MIGRATION_OK.
+2. Push V2.1 source to GitHub.
+3. Require GitHub Actions build ✅ and deploy ✅.
+4. Run the single end-to-end customer journey in TEST_CHECKLIST.txt.
+5. Keep 02_FINAL_RLS_LOCKDOWN.sql unrun until the workflow is stable in real use.

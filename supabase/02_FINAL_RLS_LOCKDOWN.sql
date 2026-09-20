@@ -1,4 +1,4 @@
--- MEN'S HAIR STUDIO V2.0 — FINAL RLS LOCKDOWN
+-- MEN'S HAIR STUDIO V2.1 — FINAL RLS LOCKDOWN
 -- Run ONLY after localhost + production tests pass.
 
 create or replace function public.is_active_admin() returns boolean

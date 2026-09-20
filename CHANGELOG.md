@@ -1,3 +1,11 @@
+# V2.1.1 Hotfix
+
+- Fixed Booking edit/update sending Supabase joined `customers` / `profiles` objects back into the `appointments` table.
+- Appointment payloads are now strictly whitelisted to real writable database columns.
+- Google address autocomplete no longer opens merely by focusing an address field with a saved address.
+- Address suggestions now start only after the user types at least 3 characters.
+- No SQL migration required for this hotfix.
+
 # Changelog
 
 ## V2.1.0 — Workflow + Calendar Rebuild

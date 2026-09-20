@@ -9,8 +9,50 @@ export const SLOT_MINUTES=30
 export const appointmentBlank = (when = new Date(Date.now()+86400000)) => ({
   customer_id:'',service_type:'Maintenance',date:localDateKey(when),time:localTimeValue(when),duration_min:90,assigned_user_id:'',location_type:'studio',address:'',place_name:'',google_place_id:'',lat:null,lng:null,google_maps_url:'',status:'confirmed',notes:'',travel_buffer_before:0,travel_buffer_after:0
 })
-export const appointmentToForm = (x) => ({...appointmentBlank(new Date(x.scheduled_at)),...x,customer_id:x.customer_id||'',assigned_user_id:x.assigned_user_id||'',date:localDateKey(x.scheduled_at),time:localTimeValue(x.scheduled_at)})
-export const formToAppointment = (f) => ({...f,scheduled_at:combineLocalDateTime(f.date,f.time),duration_min:Number(f.duration_min||60),travel_buffer_before:Number(f.travel_buffer_before||0),travel_buffer_after:Number(f.travel_buffer_after||0),assigned_user_id:f.assigned_user_id||null,customer_id:f.customer_id||null})
+
+// Never spread a Supabase appointment row into the edit form. Joined relation objects
+// such as `customers` and `profiles` are read-only display data, not appointment columns.
+export const appointmentToForm = (x) => ({
+  ...appointmentBlank(new Date(x.scheduled_at)),
+  customer_id:x.customer_id||'',
+  service_type:x.service_type||'Maintenance',
+  date:localDateKey(x.scheduled_at),
+  time:localTimeValue(x.scheduled_at),
+  duration_min:Number(x.duration_min||60),
+  assigned_user_id:x.assigned_user_id||'',
+  location_type:x.location_type||'studio',
+  address:x.address||'',
+  place_name:x.place_name||'',
+  google_place_id:x.google_place_id||'',
+  lat:x.lat ?? null,
+  lng:x.lng ?? null,
+  google_maps_url:x.google_maps_url||'',
+  status:x.status||'confirmed',
+  notes:x.notes||'',
+  travel_buffer_before:Number(x.travel_buffer_before||0),
+  travel_buffer_after:Number(x.travel_buffer_after||0)
+})
+
+// Whitelist only writable appointment columns. This prevents joined Supabase relation
+// objects (`customers`, `profiles`) from being sent back during an update.
+export const formToAppointment = (f) => ({
+  customer_id:f.customer_id||null,
+  service_type:f.service_type||'Maintenance',
+  scheduled_at:combineLocalDateTime(f.date,f.time),
+  duration_min:Number(f.duration_min||60),
+  assigned_user_id:f.assigned_user_id||null,
+  location_type:f.location_type||'studio',
+  address:f.address?.trim()||null,
+  place_name:f.place_name?.trim()||null,
+  google_place_id:f.google_place_id?.trim()||null,
+  lat:f.lat===''||f.lat==null?null:Number(f.lat),
+  lng:f.lng===''||f.lng==null?null:Number(f.lng),
+  google_maps_url:f.google_maps_url?.trim()||null,
+  status:f.status||'confirmed',
+  notes:f.notes?.trim()||null,
+  travel_buffer_before:Number(f.travel_buffer_before||0),
+  travel_buffer_after:Number(f.travel_buffer_after||0)
+})
 
 export function monthCells(cursor){
   const first=new Date(cursor.getFullYear(),cursor.getMonth(),1)

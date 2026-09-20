@@ -43,6 +43,7 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
   const [status, setStatus] = useState(googleMapsApiKey ? 'loading' : 'missing')
   const [searching, setSearching] = useState(false)
   const [open, setOpen] = useState(false)
+  const [userEdited, setUserEdited] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const [box, setBox] = useState(null)
 
@@ -71,8 +72,13 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
 
   useEffect(() => {
     const address = value?.formatted_address || value?.address || ''
-    if (address && address !== query && !open) setQuery(address)
-    // Deliberately not depending on query: external saved value should update the field.
+    if (address !== query && !userEdited) setQuery(address)
+    if (!userEdited) {
+      setSuggestions([])
+      setOpen(false)
+      setActiveIndex(-1)
+    }
+    // A saved/external address is display data, not a search request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value?.formatted_address, value?.address])
 
@@ -95,9 +101,12 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
   }, [open])
 
   useEffect(() => {
-    if (status !== 'ready' || !placesRef.current) return
+    if (!userEdited || status !== 'ready' || !placesRef.current) {
+      setOpen(false)
+      return
+    }
     const text = query.trim()
-    if (text.length < 2) {
+    if (text.length < 3) {
       setSuggestions([])
       setOpen(false)
       return
@@ -135,7 +144,7 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
     }, 220)
 
     return () => clearTimeout(timer)
-  }, [query, status])
+  }, [query, status, userEdited])
 
   const selectSuggestion = async prediction => {
     try {
@@ -155,6 +164,7 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
           : mapsUrl({address:place.formattedAddress || predictionText(prediction)})
       }
       setQuery(data.formatted_address)
+      setUserEdited(false)
       setSuggestions([])
       setOpen(false)
       setActiveIndex(-1)
@@ -223,13 +233,16 @@ export default function PlaceAutocomplete({ value, onChange, label='Search addre
         value={query}
         onChange={e => {
           setQuery(e.target.value)
+          setUserEdited(true)
+          if (e.target.value.trim().length < 3) {
+            setSuggestions([])
+            setOpen(false)
+          }
           if (status === 'error' && placesRef.current) setStatus('ready')
         }}
         onFocus={() => {
-          if (suggestions.length) {
-            setOpen(true)
-            requestAnimationFrame(updateBox)
-          }
+          // Do not open saved/cached suggestions just because the field received focus.
+          // Suggestions only appear after the user actually types a new search.
         }}
         onBlur={() => setTimeout(() => setOpen(false), 140)}
         onKeyDown={keyDown}

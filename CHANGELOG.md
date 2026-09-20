@@ -59,3 +59,14 @@
 
 ## V2.0.1
 - Fixed PostgreSQL 42P17 appointment exclusion constraint by materializing blocked_start / blocked_end.
+
+## V2.2.0 — UI / mobile / customer portal preview
+- Fixed Before / After toolbar layout so Gallery / Compare tabs no longer collapse into a tiny scroll box.
+- Calendar booking actions now distinguish Start service from Continue service.
+- In-progress/completed appointment status is system-managed by Service and no longer manually selectable.
+- Added SPA browser-history navigation: phone/browser Back returns to the previous in-app screen instead of immediately leaving the web app after normal navigation.
+- Every main screen/customer screen navigation scrolls back to the top.
+- Mobile UI polish for page headers, tabs, calendar controls, customer actions, modals and bottom navigation.
+- Added Customer View preview from Customer Profile for testing the future customer portal UI.
+- Added customer portal preview for next appointment, hair system, account credit, outstanding amount, service history, photos and payments.
+- No database migration required for V2.2.0.

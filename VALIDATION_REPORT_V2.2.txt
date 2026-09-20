@@ -1,0 +1,20 @@
+MEN'S HAIR STUDIO V2.2 — VALIDATION REPORT
+
+Static project checks:
+- Relative JS/JSX imports resolve: PASS
+- Bracket / delimiter scan across src JS/JSX: PASS
+- Appointment action logic: PASS
+  - tentative/confirmed => Start service
+  - in_progress => Continue service
+  - completed/cancelled/no-show => no Start button
+- Appointment in_progress/completed status is read-only / Service-managed: PASS
+- Media toolbar has dedicated desktop + mobile layout rules: PASS
+- SPA history state added for in-app browser Back behavior: PASS
+- Main page/customer/portal navigation scroll-to-top: PASS
+- Customer Portal Preview route + Customer Profile entry button: PASS
+- Customer Portal Preview mobile bottom navigation: PASS
+- V2.2 database migration required: NO
+
+Environment limitation:
+- npm registry is unavailable in this container, so npm install / Vite production build could not be executed here.
+- GitHub Actions build remains the final production compile gate after push.

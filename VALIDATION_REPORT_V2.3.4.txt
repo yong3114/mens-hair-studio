@@ -1,0 +1,26 @@
+MEN'S HAIR STUDIO V2.3.4 — VALIDATION REPORT
+
+Static source checks:
+- JS/JSX TypeScript parser: PASS
+- Relative import paths: PASS
+- Named relative imports: PASS
+- V2.3.4 migration included: PASS
+- Lead update payload is explicit/whitelisted: PASS
+- Lead row click opens details: PASS
+- Follow-up log/history API wired: PASS
+- In-progress appointment reset RPC wired: PASS
+- Consultation Return-to-booked / Cancel controls: PASS
+- Service Return-to-booked / Cancel controls: PASS
+- Latest service-per-appointment mapping bug fixed: PASS
+
+Database migration adds:
+- leads.last_contacted_at
+- lead_followups
+- log_lead_followup RPC
+- reset_appointment_workflow RPC
+- start_consultation cancelled-session recovery
+- start_service cancelled-session recovery
+
+Important:
+- Production cloud build still uses GitHub Actions as the final compile gate.
+- Run supabase/05_V2_3_4_LEADS_STATUS_FIX.sql before using the new follow-up/status actions.

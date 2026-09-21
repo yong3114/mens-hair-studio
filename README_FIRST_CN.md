@@ -1,33 +1,25 @@
-# Men's Hair Studio V2.3 — Hair System Core Workflow
+# Men's Hair Studio V2.3.4 — Leads CRM + Workflow Status
 
-这版的重点不是“再加几个页面”，而是把系统改成真正符合 Hair System 生意的流程。
+当前主流程：
 
-## 核心流程
+Lead → Follow-up → Consultation → Signed / Follow Up / Lost → Client → Installation → Active Client → Maintenance
 
-Lead → Consultation → Decision → Deal → Installation → Active Client → Maintenance
+## 本版重点
 
-## 新增
+- Leads 页面重新设计：整行点进去、清楚 Edit / Save、Next Follow-up、Last Contacted、Follow-up History。
+- Consultation / Service Start 后不再“锁死”：误按 Start 可以安全 Return to booked 或 Cancel。
+- Completed 仍然保护，避免 Payment / Stock / Deal 记录被随意破坏。
 
-- Lead 不需要真实姓名 / 电话
-- Lead 可直接 Book Consultation
-- Consultation 与 Service 完全分开
-- Signed / Follow Up / Not Signed outcome
-- Signed 后才自动建立 Client
-- Deal / Hair System Selection
-- Deposit / Balance
-- Stock / Custom order
-- Installation 完成后才变 Active Client
-- Ah Bi / Yong My Jobs
-- In-app Notification Bell
-- Assignment / Reschedule notifications
+## 升级必须先 Run
 
-## 更新顺序
+`supabase/05_V2_3_4_LEADS_STATUS_FIX.sql`
 
-先看：`V2.3_UPDATE_STEP_BY_STEP_CN.md`
+成功看到：
 
-先 Run：`supabase/04_V2_3_HAIR_SYSTEM_CORE.sql`
+`V2_3_4_LEADS_STATUS_OK`
 
-> `02_FINAL_RLS_LOCKDOWN.sql` 仍然不要现在跑，等 Customer Portal 和 automation 权限一起完成后再做最终锁定。
+然后覆盖项目、git add / commit / push。
 
-## V2.3.3 手机 UI 修正
-如果从 V2.3.2 / V2.3.1 升级，不需要 Run SQL。重点修复 New Lead / New Client / New Booking 等弹窗在手机上的定位、滚动、键盘与操作按钮体验。详情看 `V2.3.3_UX_FIX_CN.md`。
+完整步骤看：`V2.3.4_UPDATE_CN.md`
+
+> `02_FINAL_RLS_LOCKDOWN.sql` 暂时仍不要 Run，等 Customer Portal + Automation 权限完成后再做最终锁定。

@@ -51,3 +51,12 @@
 ### Next phases
 - V2.4: real Customer Login + self-booking + available slots + loyalty points.
 - V2.5: WhatsApp Cloud API + Email automation + appointment reminders + notification delivery logs.
+
+## V2.3.4 — Leads CRM + In-progress Status
+- Rebuilt Leads as a clickable CRM list + detail drawer.
+- Added Next Follow-up, Last Contacted, follow-up logging and follow-up history.
+- Fixed Lead Save flow with an explicit database-safe payload.
+- Added Open / Due / Consultation booked / Signed lead KPIs and filters.
+- Added safe Return to booked / Cancel controls for in-progress consultation and service workflows.
+- Completed work remains protected from unsafe status rollback.
+- Fixed service-to-appointment lookup so the latest service record wins.

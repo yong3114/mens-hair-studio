@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react'
-import { CheckCircle2, Clock3, UserRound, CalendarPlus, Package, MessageCircle, XCircle } from 'lucide-react'
-import { completeConsultation, listConsultations, listDeals, listHairSystems, startConsultation } from '../lib/api'
+import { CheckCircle2, Clock3, UserRound, CalendarPlus, Package, MessageCircle, XCircle, RotateCcw, Ban } from 'lucide-react'
+import { completeConsultation, listConsultations, listDeals, listHairSystems, startConsultation, resetAppointmentWorkflow } from '../lib/api'
 import { Badge, Empty, Field, Modal, Tabs } from '../components/UI'
 import { customerLabel, dateTime, leadLabel, money, shortDate } from '../lib/utils'
 
@@ -17,6 +17,7 @@ export default function Sales({prefill,onDone,onViewCustomer,onBookInstallation}
  async function openFromAppointment(a){setBusy(true);setError('');try{const id=await startConsultation(a.id,a.assigned_user_id||null);let rows=await listConsultations();setConsultations(rows);const c=rows.find(x=>x.id===id);openSession(c||{id,appointment_id:a.id,lead_id:a.lead_id,customer_id:a.customer_id,leads:a.leads,customers:a.customers});onDone?.()}catch(e){setError(e.message)}finally{setBusy(false)}}
  function openSession(c){setActive(c);setOutcome('follow_up');setForm({...blank,concern:c.concern||'',coverage_area:c.coverage_area||'',colour_preference:c.colour_preference||'',density_preference:c.density_preference||'',hairline_preference:c.hairline_preference||'',lifestyle:c.lifestyle||'',budget:c.budget||'',recommendation:c.recommendation||'',notes:c.notes||'',follow_up_date:c.follow_up_date||'',lost_reason:c.lost_reason||'',real_name:c.customers?.name||c.leads?.name||''});setOpen(true);setError('')}
  async function finish(e){e.preventDefault();setBusy(true);setError('');try{const finalPrice=Number(form.final_price||Math.max(0,Number(form.quoted_price||0)-Number(form.discount||0)));const result=await completeConsultation(active.id,outcome,{...form,final_price:finalPrice});setOpen(false);setActive(null);await load();if(outcome==='signed'&&result?.customer_id)onViewCustomer?.(result.customer_id)}catch(e){setError(e.message)}finally{setBusy(false)}}
+ async function changeActiveStatus(target){if(!active?.appointment_id)return;const text=target==='confirmed'?'return this consultation to Booked':'cancel this consultation';if(!confirm(`Are you sure you want to ${text}?`))return;setBusy(true);setError('');try{await resetAppointmentWorkflow(active.appointment_id,target);setOpen(false);setActive(null);await load();onDone?.()}catch(e){setError(e.message||'Could not change consultation status.')}finally{setBusy(false)}}
  const inProgress=consultations.filter(x=>x.status==='in_progress')
  const done=consultations.filter(x=>x.status==='completed')
  return <div className="page sales-page">
@@ -49,7 +50,7 @@ export default function Sales({prefill,onDone,onViewCustomer,onBookInstallation}
       <Field label="Final price (RM)"><input type="number" min="0" step="0.01" value={form.final_price} onChange={e=>setForm({...form,final_price:e.target.value})}/></Field><Field label="Deposit (RM)"><input type="number" min="0" step="0.01" value={form.deposit_amount} onChange={e=>setForm({...form,deposit_amount:e.target.value})}/></Field>
       <Field label="Deposit payment"><div className="dual-input"><select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}>{['Cash','Bank Transfer','DuitNow QR','Card','Other'].map(x=><option key={x}>{x}</option>)}</select><select value={form.payment_status} onChange={e=>setForm({...form,payment_status:e.target.value})}><option value="paid">Paid</option><option value="outstanding">Outstanding</option></select></div></Field><Field label="Deal notes"><textarea value={form.deal_notes} onChange={e=>setForm({...form,deal_notes:e.target.value})}/></Field>
     </>}
-    <div className="form-actions"><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Keep open</button><button disabled={busy} className="btn btn-primary">{busy?'Saving...':outcome==='signed'?'Save signed deal':outcome==='follow_up'?'Save follow-up':'Close as not signed'}</button></div>
+    <div className="form-actions consultation-actions"><button type="button" className="btn btn-ghost" disabled={busy} onClick={()=>changeActiveStatus('confirmed')}><RotateCcw size={16}/>Return to booked</button><button type="button" className="btn btn-danger-ghost" disabled={busy} onClick={()=>changeActiveStatus('cancelled')}><Ban size={16}/>Cancel consultation</button><span className="grow"/><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Keep open</button><button disabled={busy} className="btn btn-primary">{busy?'Saving...':outcome==='signed'?'Save signed deal':outcome==='follow_up'?'Save follow-up':'Close as not signed'}</button></div>
   </form>}</Modal>
  </div>
 }

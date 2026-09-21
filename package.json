@@ -1,7 +1,7 @@
 {
-  "name": "mens-hair-studio-v2-3-3-ux-fix",
+  "name": "mens-hair-studio-v2-3-4-leads-status",
   "private": true,
-  "version": "2.3.3",
+  "version": "2.3.4",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -24,6 +24,8 @@ export async function getDashboard(userId=null) {
 
 export async function listLeads(){ return ok(await supabase.from('leads').select('*').order('created_at',{ascending:false})) }
 export async function saveLead(payload,id){ return ok(id ? await supabase.from('leads').update(payload).eq('id',id).select().single() : await supabase.from('leads').insert(payload).select().single()) }
+export async function listLeadFollowups(leadId){ return ok(await supabase.from('lead_followups').select('*,profiles!lead_followups_created_by_fkey(full_name)').eq('lead_id',leadId).order('contacted_at',{ascending:false}).limit(100)) }
+export async function logLeadFollowup(leadId,{note='',next_follow_up_date=null,channel='WhatsApp',stage='follow_up'}={}){ const {data,error}=await supabase.rpc('log_lead_followup',{p_lead_id:leadId,p_note:note||null,p_next_follow_up_date:next_follow_up_date||null,p_channel:channel,p_stage:stage}); if(error)throw error; return data }
 export async function deleteLead(id){
   // Testing-friendly cleanup: remove linked consultation bookings first so deleted leads do not leave orphan calendar records.
   const appts = await supabase.from('appointments').select('id').eq('lead_id',id); ok(appts)
@@ -72,6 +74,7 @@ export async function listAppointments(start,end){
   return ok(await q)
 }
 export async function saveAppointment(payload,id){ return ok(id ? await supabase.from('appointments').update(payload).eq('id',id).select().single() : await supabase.from('appointments').insert(payload).select().single()) }
+export async function resetAppointmentWorkflow(appointmentId,targetStatus='confirmed'){ const {data,error}=await supabase.rpc('reset_appointment_workflow',{p_appointment_id:appointmentId,p_target_status:targetStatus}); if(error)throw error; return data }
 export async function deleteAppointment(id){
   // Only use for bookings that have not progressed into a completed technical record.
   ok(await supabase.from('consultations').delete().eq('appointment_id',id))
@@ -116,8 +119,8 @@ export async function uploadMedia(file, customerId, serviceId, kind, consent){
 export async function deleteMedia(row){ const storage = await supabase.storage.from('customer-media').remove([row.storage_path]); ok(storage); return ok(await supabase.from('media').delete().eq('id',row.id)) }
 
 export async function exportAll(){
-  const tables=['profiles','leads','customers','appointments','consultations','deals','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','notifications','activity_log']
-  const out={exported_at:new Date().toISOString(),version:'2.3.1',data:{}}
+  const tables=['profiles','leads','lead_followups','customers','appointments','consultations','deals','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','notifications','activity_log']
+  const out={exported_at:new Date().toISOString(),version:'2.3.4',data:{}}
   for(const t of tables){ const r=await supabase.from(t).select('*'); out.data[t]=ok(r) }
   return out
 }

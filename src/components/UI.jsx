@@ -39,12 +39,12 @@ export function Modal({open,onClose,title,children,wide=false}){
   return createPortal(node,document.body)
 }
 
-export function Drawer({open,onClose,title,children}){
+export function Drawer({open,onClose,title,children,eyebrow='BOOKING'}){
   useDialogEffects(open,onClose)
   if(!open)return null
   const node=<div className="drawer-backdrop ui-enter" onMouseDown={e=>e.target===e.currentTarget&&onClose?.()}>
     <aside className="drawer surface-pop" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="drawer-head"><div><span className="eyebrow">BOOKING</span><h2>{title}</h2></div><button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={20}/></button></div>
+      <div className="drawer-head"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={20}/></button></div>
       <div className="drawer-body">{children}</div>
     </aside>
   </div>

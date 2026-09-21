@@ -1,0 +1,35 @@
+MEN'S HAIR STUDIO V2.3.3 — VALIDATION REPORT
+Generated: 2026-09-21
+
+Scope
+- Mobile / desktop modal and drawer positioning
+- Long-form scrolling
+- Core UI syntax / imports
+- Appointment workflow guards
+- Maintenance follow-up de-duplication
+
+Checks
+1. JS / JSX TypeScript parser check: PASS
+   Source files parsed: 23
+2. Relative import resolution: PASS
+3. CSS brace balance: PASS
+4. Modal rendered through React Portal: PASS
+5. Drawer rendered through React Portal: PASS
+6. New Lead autoFocus removed on mobile opening path: PASS
+7. Customer appointment action routes Consultation vs Service correctly: PASS
+8. Free Home Consultation -> Studio Consultation resets location/travel buffer: PASS
+9. Maintenance Due uses latest completed service per customer: PASS
+10. Dynamic viewport mobile layout (100dvh): PASS
+11. Mobile form actions no longer overlay final fields: PASS
+
+Headless Chromium layout smoke tests
+- Modal @ 390x844: PASS (contained in viewport; long form scrollable; actions reachable)
+- Modal @ 360x640: PASS (contained in viewport; long form scrollable; actions reachable)
+- Modal @ 1440x900: PASS
+- Booking Drawer @ 390x844: PASS
+- Booking Drawer @ 360x640: PASS
+- Booking Drawer @ 1440x900: PASS
+
+Important limitation
+- Real production Supabase / Google Maps end-to-end calls were not executed because this validation environment does not have the user's credentials.
+- Final deployment gate remains GitHub Actions build/deploy success plus real-device testing.

@@ -47,7 +47,7 @@ export default function App(){
  let content
  if(page==='dashboard')content=<Dashboard go={go} profile={profile} onStartService={openAppointment} onStartConsultation={openAppointment}/>
  else if(page==='leads')content=<Leads onBookConsultation={lead=>bookFor(lead,'lead','Studio Consultation')}/>
- else if(page==='customers')content=customerId?<CustomerDetail id={customerId} onBack={()=>window.history.back()} onBook={(c,type)=>bookFor(c,'customer',type)} onService={x=>{navigate('services');setServicePrefill(x)}} onPreviewPortal={()=>previewCustomer(customerId)} onDeleted={()=>navigate('customers',{replace:true})}/>:<Customers onOpen={viewCustomer}/>
+ else if(page==='customers')content=customerId?<CustomerDetail id={customerId} onBack={()=>window.history.back()} onBook={(c,type)=>bookFor(c,'customer',type)} onService={x=>{navigate('services');setServicePrefill(x)}} onAppointmentAction={openAppointment} onPreviewPortal={()=>previewCustomer(customerId)} onDeleted={()=>navigate('customers',{replace:true})}/>:<Customers onOpen={viewCustomer}/>
  else if(page==='appointments')content=<Appointments prefill={appointmentPrefill} onStartService={openAppointment} onStartConsultation={openAppointment}/>
  else if(page==='sales')content=<Sales prefill={salesPrefill} onDone={()=>setSalesPrefill(null)} onViewCustomer={viewCustomer} onBookInstallation={c=>bookFor(c,'customer','New System Installation')}/>
  else if(page==='services')content=<Services prefill={servicePrefill} onDone={()=>setServicePrefill(null)} onViewCustomer={viewCustomer} onBook={(c,type)=>bookFor(c,'customer',type)} onAddMedia={x=>{navigate('media');setMediaPrefill(x)}}/>

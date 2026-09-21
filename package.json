@@ -1,7 +1,7 @@
 {
-  "name": "mens-hair-studio-v2-3-2-premium-ui",
+  "name": "mens-hair-studio-v2-3-3-ux-fix",
   "private": true,
-  "version": "2.3.2",
+  "version": "2.3.3",
   "type": "module",
   "scripts": {
     "dev": "vite",

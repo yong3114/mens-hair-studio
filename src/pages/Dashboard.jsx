@@ -18,7 +18,7 @@ export default function Dashboard({go,profile,onStartService,onStartConsultation
   const low=d.consumables.filter(x=>Number(x.qty)<=Number(x.min_qty))
   const outstanding=d.payments.filter(x=>x.status==='outstanding').reduce((a,x)=>a+Number(x.amount||0),0)
   const sales=d.payments.filter(x=>localDateKey(x.paid_at||x.created_at)===today&&x.status==='paid'&&x.type!=='refund').reduce((a,x)=>a+Number(x.amount||0),0)
-  const maintenanceDue=d.services.filter(x=>x.next_maintenance_date&&x.next_maintenance_date<=today)
+  const latestServiceByCustomer=new Map();[...d.services].sort((a,b)=>new Date(b.completed_at||b.started_at)-new Date(a.completed_at||a.started_at)).forEach(x=>{if(x.customer_id&&!latestServiceByCustomer.has(x.customer_id))latestServiceByCustomer.set(x.customer_id,x)});const maintenanceDue=[...latestServiceByCustomer.values()].filter(x=>x.next_maintenance_date&&x.next_maintenance_date<=today)
   const signedThisMonth=d.deals.filter(x=>{const dt=new Date(x.signed_at);const now=new Date();return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear()})
   return {todayAppts,myJobs,openLeads,followups,low,outstanding,sales,maintenanceDue,signedThisMonth,unread:d.notifications?.length||0}
  },[d,profile?.id])

@@ -28,3 +28,6 @@ Lead → Consultation → Decision → Deal → Installation → Active Client �
 先 Run：`supabase/04_V2_3_HAIR_SYSTEM_CORE.sql`
 
 > `02_FINAL_RLS_LOCKDOWN.sql` 仍然不要现在跑，等 Customer Portal 和 automation 权限一起完成后再做最终锁定。
+
+## V2.3.3 手机 UI 修正
+如果从 V2.3.2 / V2.3.1 升级，不需要 Run SQL。重点修复 New Lead / New Client / New Booking 等弹窗在手机上的定位、滚动、键盘与操作按钮体验。详情看 `V2.3.3_UX_FIX_CN.md`。

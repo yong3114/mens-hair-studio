@@ -1,4 +1,3 @@
-import { localDateKey } from './utils'
 import { supabase } from './supabase'
 
 const ok = (r) => { if (r.error) throw r.error; return r.data }
@@ -7,8 +6,6 @@ export async function getProfile(userId) { return ok(await supabase.from('profil
 
 export async function getDashboard(userId=null) {
   const start = new Date(); start.setHours(0,0,0,0)
-  const maintenanceFrom = new Date(); maintenanceFrom.setDate(maintenanceFrom.getDate()-14)
-  const maintenanceTo = new Date(); maintenanceTo.setDate(maintenanceTo.getDate()+14)
   const [leads, customers, appts, systems, consumables, payments, services, consultations, deals, notifications] = await Promise.all([
     supabase.from('leads').select('id,name,whatsapp_name,phone,stage,follow_up_date'),
     supabase.from('customers').select('id,lifecycle_stage'),
@@ -16,7 +13,7 @@ export async function getDashboard(userId=null) {
     supabase.from('hair_systems').select('id,status'),
     supabase.from('consumables').select('id,qty,min_qty,name,unit'),
     supabase.from('payments').select('id,amount,status,type,paid_at,created_at'),
-    supabase.from('services').select('id,customer_id,status,service_type,started_at,completed_at,next_maintenance_date,customers(name,whatsapp_name)').gte('next_maintenance_date', localDateKey(maintenanceFrom)).lte('next_maintenance_date', localDateKey(maintenanceTo)).order('next_maintenance_date'),
+    supabase.from('services').select('id,customer_id,status,service_type,started_at,completed_at,next_maintenance_date,customers(name,whatsapp_name)').eq('status','completed').not('next_maintenance_date','is',null).order('completed_at',{ascending:false}).limit(500),
     supabase.from('consultations').select('id,status,outcome,follow_up_date,lead_id,customer_id,appointment_id').order('created_at',{ascending:false}).limit(100),
     supabase.from('deals').select('id,status,customer_id,final_price,deposit_amount,balance_amount,signed_at').order('signed_at',{ascending:false}).limit(100),
     userId ? supabase.from('notifications').select('*').eq('recipient_user_id',userId).is('read_at',null).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[],error:null})

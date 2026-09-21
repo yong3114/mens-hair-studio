@@ -1,3 +1,15 @@
+# V2.3.3 — Mobile Overlay & UX Reliability
+
+- Render Modal / Drawer through a React portal so dialogs are positioned against the real viewport, not animated page containers.
+- Rebuilt mobile long-form behavior with dynamic viewport height (`dvh`) and reliable internal scrolling.
+- Removed sticky action bars that could cover the last fields/buttons on phones.
+- Mobile page headers stack cleanly and primary actions become full-width on narrow screens.
+- Removed automatic keyboard pop-up on New Lead for a calmer mobile opening experience.
+- Fixed switching Free Home Consultation → Studio Consultation leaving home/travel-buffer settings behind.
+- Fixed Customer Profile appointment actions so consultation bookings open Consultation flow, while technical bookings open Service flow.
+- Modal/Drawer z-index and overflow isolation hardened.
+- No database migration required.
+
 # V2.3.1
 - Fix desktop notification popover clipping.
 - Add clear notifications.

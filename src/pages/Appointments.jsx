@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
-import { Plus, ChevronLeft, ChevronRight, MapPin, GripVertical, Play, Trash2, RotateCcw, Ban } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, MapPin, GripVertical, Play, Trash2, RotateCcw, Ban, Search, X } from 'lucide-react'
 import { listAppointments, listCustomers, listLeads, listProfiles, saveAppointment, saveLead, deleteAppointment, resetAppointmentWorkflow } from '../lib/api'
 import { Badge, Empty, Field, Drawer, Tabs } from '../components/UI'
 import PlaceAutocomplete from '../components/PlaceAutocomplete'
@@ -8,6 +8,29 @@ import { appointmentBlank, appointmentToForm, formToAppointment, monthCells, wee
 
 const SLOT_HEIGHT=44
 const statusTone=s=>s==='confirmed'?'success':s==='in_progress'?'warn':s==='cancelled'||s==='no-show'?'danger':'neutral'
+
+function BookingPersonPicker({consultation,leadId,customerId,leads,customers,onSelectLead,onSelectCustomer}){
+ const[q,setQ]=useState(''),[focused,setFocused]=useState(false)
+ const selectedLead=leadId?leads.find(x=>x.id===leadId):null
+ const selectedCustomer=customerId?customers.find(x=>x.id===customerId):null
+ const selected=selectedLead?{kind:'Lead',label:leadLabel(selectedLead),sub:[selectedLead.phone,selectedLead.area].filter(Boolean).join(' · ')}:selectedCustomer?{kind:'Client',label:customerLabel(selectedCustomer),sub:[selectedCustomer.phone,selectedCustomer.area].filter(Boolean).join(' · ')}:null
+ const needle=q.trim().toLowerCase()
+ const leadMatches=consultation&&needle?leads.filter(l=>!['signed','lost'].includes(l.stage)||l.id===leadId).filter(l=>`${leadLabel(l)} ${l.whatsapp_name||''} ${l.name||''} ${l.phone||''} ${l.area||''}`.toLowerCase().includes(needle)).slice(0,6):[]
+ const customerMatches=needle?customers.filter(c=>`${customerLabel(c)} ${c.whatsapp_name||''} ${c.name||''} ${c.phone||''} ${c.area||''}`.toLowerCase().includes(needle)).slice(0,6):[]
+ const show=focused&&needle.length>0
+ const choose=(kind,id)=>{kind==='lead'?onSelectLead(id):onSelectCustomer(id);setQ('');setFocused(false)}
+ const clear=()=>{leadId?onSelectLead(''):onSelectCustomer('');setQ('');setFocused(false)}
+ return <div className="booking-person-picker" data-no-drag="true">
+   {selected&&<div className="person-selected"><div><span className="picker-type">{selected.kind}</span><strong>{selected.label}</strong><small>{selected.sub||'Selected for this booking'}</small></div><button type="button" className="icon-btn" onClick={clear} aria-label="Clear selection"><X size={16}/></button></div>}
+   <div className="picker-search"><Search size={17}/><input value={q} onFocus={()=>setFocused(true)} onBlur={()=>window.setTimeout(()=>setFocused(false),140)} onChange={e=>{setQ(e.target.value);setFocused(true)}} placeholder={selected?'Search to change person...':consultation?'Search lead / client / phone...':'Search client / phone / area...'}/></div>
+   {show&&<div className="picker-results">
+     {consultation&&leadMatches.length>0&&<><div className="picker-group">Leads</div>{leadMatches.map(x=><button type="button" key={`lead-${x.id}`} onMouseDown={e=>e.preventDefault()} onClick={()=>choose('lead',x.id)}><span className="picker-result-type">Lead</span><div><strong>{leadLabel(x)}</strong><small>{[x.phone,x.area].filter(Boolean).join(' · ')||'Phone not captured'}</small></div></button>)}</>}
+     {customerMatches.length>0&&<><div className="picker-group">Clients</div>{customerMatches.map(x=><button type="button" key={`customer-${x.id}`} onMouseDown={e=>e.preventDefault()} onClick={()=>choose('customer',x.id)}><span className="picker-result-type client">Client</span><div><strong>{customerLabel(x)}</strong><small>{[x.phone,x.area].filter(Boolean).join(' · ')||x.lifecycle_stage||'Signed client'}</small></div></button>)}</>}
+     {!leadMatches.length&&!customerMatches.length&&<div className="picker-empty">No match. Try a name, WhatsApp name, phone or area.</div>}
+   </div>}
+   {!selected&&<small className="picker-help">Type at least 1 character to search. This keeps long client lists fast.</small>}
+ </div>
+}
 
 export default function Appointments({prefill,onStartService,onStartConsultation}){
  const[view,setView]=useState(()=>window.innerWidth<820?'day':'month'),[cursor,setCursor]=useState(new Date()),[rows,setRows]=useState([]),[customers,setCustomers]=useState([]),[leads,setLeads]=useState([]),[profiles,setProfiles]=useState([])
@@ -29,7 +52,6 @@ export default function Appointments({prefill,onStartService,onStartConsultation
  const nav=dir=>{const d=new Date(cursor);if(view==='month'||view==='agenda'||view==='map')d.setMonth(d.getMonth()+dir);else if(view==='week')d.setDate(d.getDate()+7*dir);else d.setDate(d.getDate()+dir);setCursor(d)}
  const label=view==='month'||view==='agenda'||view==='map'?cursor.toLocaleDateString('en-MY',{month:'long',year:'numeric'}):view==='week'?`${weekDays(cursor)[0].toLocaleDateString('en-MY',{day:'numeric',month:'short'})} – ${weekDays(cursor)[6].toLocaleDateString('en-MY',{day:'numeric',month:'short',year:'numeric'})}`:cursor.toLocaleDateString('en-MY',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
  const home=visibleRows.filter(x=>x.location_type==='home'&&!['cancelled','no-show'].includes(x.status)&&new Date(x.scheduled_at)>new Date(Date.now()-86400000)).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at))
- const consultPersonValue=form.lead_id?`lead:${form.lead_id}`:form.customer_id?`customer:${form.customer_id}`:''
  const currentRow=editing?rows.find(x=>x.id===editing):null
  const action=()=>{const a={...currentRow,...form,id:editing,scheduled_at:formToAppointment(form).scheduled_at,customers:currentRow?.customers,leads:currentRow?.leads};setOpen(false);isConsultationType(form.service_type)?onStartConsultation?.(a):onStartService?.(a)}
  const resetActive=async target=>{if(!editing)return;const label=target==='confirmed'?'return this job to Booked':'cancel this in-progress job';if(!confirm(`Are you sure you want to ${label}?`))return;setStatusBusy(true);setError('');try{await resetAppointmentWorkflow(editing,target);setOpen(false);setEditing(null);setNotice(target==='confirmed'?'Returned to booked':'Booking cancelled');setTimeout(()=>setNotice(''),2200);await load()}catch(e){setError(e.message||'Could not change status.')}finally{setStatusBusy(false)}}
@@ -43,7 +65,7 @@ export default function Appointments({prefill,onStartService,onStartConsultation
   <Drawer open={open} onClose={()=>setOpen(false)} title={editing?'Booking details':'New booking'} eyebrow="BOOKING"><form className="form-grid booking-form" onSubmit={submit}>
    {error&&<div className="notice danger span-2">{error}</div>}
    <Field label="Booking type"><select value={form.service_type} onChange={e=>changeService(e.target.value)}>{serviceTypes.map(x=><option key={x}>{x}</option>)}</select></Field>
-   {isConsultationType(form.service_type)?<Field label="Lead / existing client"><select required value={consultPersonValue} onChange={e=>selectConsultPerson(e.target.value)}><option value="">Select prospect</option><optgroup label="Leads">{leads.filter(l=>l.id===form.lead_id||!['signed','lost'].includes(l.stage)).map(l=><option value={`lead:${l.id}`} key={l.id}>{leadLabel(l)}{l.phone?` · ${l.phone}`:''}</option>)}</optgroup><optgroup label="Existing clients">{customers.map(c=><option value={`customer:${c.id}`} key={c.id}>{customerLabel(c)}</option>)}</optgroup></select></Field>:<Field label="Signed client"><select required value={form.customer_id} onChange={e=>selectCustomer(e.target.value)}><option value="">Select client</option>{customers.map(c=><option value={c.id} key={c.id}>{customerLabel(c)}{c.lifecycle_stage?` · ${c.lifecycle_stage}`:''}</option>)}</select></Field>}
+   {isConsultationType(form.service_type)?<Field label="Lead / existing client"><BookingPersonPicker consultation leadId={form.lead_id} customerId={form.customer_id} leads={leads} customers={customers} onSelectLead={id=>id?selectConsultPerson(`lead:${id}`):setForm({...form,lead_id:''})} onSelectCustomer={id=>id?selectConsultPerson(`customer:${id}`):setForm({...form,customer_id:''})}/></Field>:<Field label="Signed client"><BookingPersonPicker consultation={false} leadId="" customerId={form.customer_id} leads={leads} customers={customers} onSelectLead={()=>{}} onSelectCustomer={id=>id?selectCustomer(id):setForm({...form,customer_id:'',address:'',place_name:'',google_place_id:'',lat:null,lng:null,google_maps_url:''})}/></Field>}
    <Field label="Date"><input required type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></Field><Field label="Start time"><input required type="time" step="900" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></Field>
    <Field label="Duration"><div className="duration-row"><input type="number" min="15" step="15" value={form.duration_min} onChange={e=>setForm({...form,duration_min:e.target.value})}/><span>minutes</span></div></Field><Field label="Assigned to"><select value={form.assigned_user_id} onChange={e=>setForm({...form,assigned_user_id:e.target.value})}><option value="">Unassigned</option>{profiles.map(p=><option value={p.id} key={p.id}>{p.full_name}</option>)}</select></Field>
    <Field label="Status">{form.status==='in_progress'?<div className="status-workflow-card"><div><Badge tone="warn">in progress</Badge><span>The {isConsultationType(form.service_type)?'consultation':'service'} has started. You can continue it, return it to Booked if started by mistake, or cancel it.</span></div><div className="status-workflow-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={statusBusy} onClick={()=>resetActive('confirmed')}><RotateCcw size={14}/>Return to booked</button><button type="button" className="btn btn-danger-ghost btn-sm" disabled={statusBusy} onClick={()=>resetActive('cancelled')}><Ban size={14}/>Cancel</button></div></div>:form.status==='completed'?<div className="status-readonly"><Badge tone="success">completed</Badge><span>Completed work is locked because it may already have sales, stock or payment records.</span></div>:<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{['tentative','confirmed','cancelled','no-show'].map(x=><option key={x}>{x.replace('_',' ')}</option>)}</select>}</Field><Field label="Location"><select value={form.location_type} onChange={e=>setForm({...form,location_type:e.target.value})}><option value="studio">Studio</option><option value="home">Home visit</option></select></Field>

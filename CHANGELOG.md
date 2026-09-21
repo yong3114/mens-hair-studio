@@ -73,3 +73,11 @@
 - Added safe Return to booked / Cancel controls for in-progress consultation and service workflows.
 - Completed work remains protected from unsafe status rollback.
 - Fixed service-to-appointment lookup so the latest service record wins.
+
+## V2.3.6
+- Fixed stray `0` on Dashboard when there are no attention items.
+- Fixed Lead sales-status date field overflow on desktop.
+- Added mobile swipe-down dismiss for all Modal / Drawer sheets.
+- Improved long-form mobile scrolling and sticky action footer.
+- Added searchable lead/client picker to New Booking.
+- Added additional small-screen form and overlay polish.

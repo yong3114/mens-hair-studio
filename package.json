@@ -1,7 +1,7 @@
 {
-  "name": "mens-hair-studio-v2-3-5-lead-crm",
+  "name": "mens-hair-studio-v2-3-6-mobile-sheets",
   "private": true,
-  "version": "2.3.5",
+  "version": "2.3.6",
   "type": "module",
   "scripts": {
     "dev": "vite",

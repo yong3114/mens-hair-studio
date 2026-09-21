@@ -1,0 +1,23 @@
+Men's Hair Studio V2.3.6 Validation
+===================================
+
+Scope
+- Dashboard stray-zero render guard
+- Lead sales-status layout
+- Mobile Modal / Drawer swipe-down dismiss
+- Mobile long-form reachability
+- Searchable person picker in New Booking
+- Small-screen overlay polish
+
+Static checks
+- JS / JSX syntax parse: PASS
+- Feature assertions: PASS
+- Dashboard attention condition uses explicit Boolean: PASS
+- Booking picker present for consultation + signed client: PASS
+- Mobile sheet drag handlers present: PASS
+- Lead status fields use min-width:0 / bounded inputs: PASS
+
+Notes
+- No database schema change in V2.3.6.
+- No Supabase SQL migration is required.
+- Final production build should still be confirmed by GitHub Actions build/deploy after push.

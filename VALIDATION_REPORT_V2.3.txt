@@ -1,0 +1,42 @@
+MEN'S HAIR STUDIO V2.3 — VALIDATION REPORT
+
+Static source validation
+------------------------
+JS / JSX files parsed with TypeScript parser: PASS
+Files parsed: 23
+JS / JSX parse errors: 0
+Relative import paths: PASS
+Named/default relative exports: PASS
+CSS brace balance: PASS
+
+V2.3 workflow presence
+----------------------
+Lead pre-customer consultation support: PASS (appointments.lead_id)
+Consultations table: PASS
+Deals table: PASS
+Client lifecycle_stage: PASS
+Signed consultation RPC: PASS
+Follow-up / Not-signed outcomes: PASS
+Ready-stock reservation path: PASS
+Installation -> Active Client logic: PASS
+My Jobs dashboard logic: PASS
+In-app notifications table + assignment trigger: PASS
+Notification bell desktop/mobile: PASS
+Calendar consultation-vs-service action split: PASS
+
+SQL static checks
+-----------------
+V2_3_HAIR_SYSTEM_CORE_OK marker: PASS
+PL/pgSQL dollar-quote pairs balanced: PASS
+Final RLS list updated for consultations/deals/notifications: PASS
+
+Important limitation
+--------------------
+This environment could not complete npm install because registry access timed out, so the final production compile is NOT claimed here.
+The real build gate remains GitHub Actions: build ✅ + deploy ✅ on the user's repository.
+The migration must also be run on the user's real Supabase project and return V2_3_HAIR_SYSTEM_CORE_OK before deployment.
+
+External notification status
+----------------------------
+In-app staff notification: implemented.
+Email / WhatsApp automatic sending: intentionally NOT claimed as active in V2.3. These require provider/API credentials and are planned for the automation phase.

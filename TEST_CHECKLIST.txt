@@ -1,42 +1,43 @@
-MEN'S HAIR STUDIO V2.1 — END-TO-END SMOKE TEST
+MEN'S HAIR STUDIO V2.3 — CORE TEST CHECKLIST
 
-DO THIS AS ONE CUSTOMER JOURNEY
-================================
+A. LEAD → CONSULTATION
+[ ] New Lead can be created with only WhatsApp / display name
+[ ] Lead can Book Consultation
+[ ] Consultation appears in Calendar
+[ ] Assigned Ah Bi sees it in My Jobs
+[ ] Ah Bi receives in-app notification
 
-[ ] 1. Create Lead with ONLY WhatsApp display name.
-[ ] 2. Convert Lead → Customer without a real name.
-[ ] 3. Customer profile shows WhatsApp identity correctly.
-[ ] 4. Book appointment from Customer.
-[ ] 5. Calendar Month / Week / Day all show the booking.
-[ ] 6. Edit booking Date + Start time and save.
-[ ] 7. Desktop: drag booking to another date/time; Calendar updates.
-[ ] 8. Mobile: tap booking, edit Date/Start time; save.
-[ ] 9. Double-booking same admin/time is blocked.
-[ ] 10. Home visit travel buffers also block conflicting time.
-[ ] 11. Start Service from booking; appointment becomes In Progress.
-[ ] 12. Complete Service with amount + next maintenance.
-[ ] 13. Calendar booking becomes Completed.
-[ ] 14. Completed service appears in Customer Service History.
-[ ] 15. Consumables selected during completion are deducted.
-[ ] 16. Payment is created when amount > 0.
-[ ] 17. Outstanding payment can be Mark Paid.
-[ ] 18. Upload Before + After linked to the same completed service.
-[ ] 19. Before / After Compare view shows the pair.
-[ ] 20. Mobile camera upload works.
-[ ] 21. Google address autocomplete / Maps / Waze still work.
-[ ] 22. When next maintenance is due, Service → Follow-up shows customer.
-[ ] 23. Follow-up → Book next visit opens Calendar booking flow.
-[ ] 24. Yong changes are visible to Ah Bi and vice versa.
+B. CONSULTATION OUTCOME
+[ ] Start Consultation from Calendar
+[ ] Follow Up saves follow-up date and keeps person in Leads
+[ ] Not Signed saves lost reason and closes the lead
+[ ] Signed creates Client + Deal
+[ ] Deposit appears in Payments
+[ ] Ready-stock Hair System can be reserved
 
-DEPLOYMENT
-==========
-[ ] GitHub Actions build ✅
-[ ] GitHub Actions deploy ✅
-[ ] Production website Ctrl+Shift+R
-[ ] Desktop UI usable
-[ ] Phone UI usable
+C. SIGNED CLIENT → INSTALLATION
+[ ] Signed client profile shows SIGNED CLIENT
+[ ] Signed client prioritizes Book Installation
+[ ] Installation appears in Calendar
+[ ] Start Service works for installation
+[ ] Complete Installation changes Client to ACTIVE CLIENT
+[ ] Reserved Hair System becomes Installed
 
-ONLY AFTER REAL USE IS STABLE
-=============================
-[ ] Run supabase/02_FINAL_RLS_LOCKDOWN.sql
-[ ] Retest Yong + Ah Bi after RLS lockdown
+D. ACTIVE CLIENT → MAINTENANCE
+[ ] Active client can Book Maintenance
+[ ] Complete service stores next maintenance date
+[ ] Maintenance due appears in Service follow-up
+
+E. STAFF OPERATIONS
+[ ] Assignment notification appears in bell
+[ ] Reschedule notification appears in bell
+[ ] Mobile notification popover is usable
+[ ] Mobile Back returns to previous in-app page
+
+F. REGRESSION
+[ ] Google Address Autocomplete
+[ ] Payments
+[ ] Inventory
+[ ] Before / After upload
+[ ] Month / Week / Day / Agenda / Map
+[ ] GitHub build + deploy green

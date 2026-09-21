@@ -9,7 +9,7 @@ revoke all on function public.is_active_admin() from public;
 grant execute on function public.is_active_admin() to authenticated;
 
 DO $$ declare t text; begin
- foreach t in array array['profiles','leads','customers','appointments','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','activity_log'] loop
+ foreach t in array array['profiles','leads','customers','appointments','consultations','deals','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','notifications','activity_log'] loop
   execute format('drop policy if exists temp_authenticated_all on public.%I',t);
   execute format('drop policy if exists admin_all on public.%I',t);
   execute format('create policy admin_all on public.%I for all to authenticated using (public.is_active_admin()) with check (public.is_active_admin())',t);

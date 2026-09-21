@@ -41,3 +41,5 @@ export const mapsUrl = ({lat,lng,address}) => lat && lng
 export const wazeUrl = ({lat,lng,address}) => lat && lng
   ? `https://www.waze.com/ul?ll=${lat}%2C${lng}&navigate=yes`
   : `https://www.waze.com/ul?q=${encodeURIComponent(address || '')}&navigate=yes`
+
+export const personLabel = (x={}) => x.customers ? customerLabel(x.customers) : x.leads ? leadLabel(x.leads) : 'Unassigned person'

@@ -1,72 +1,35 @@
-# V2.1.1 Hotfix
-
-- Fixed Booking edit/update sending Supabase joined `customers` / `profiles` objects back into the `appointments` table.
-- Appointment payloads are now strictly whitelisted to real writable database columns.
-- Google address autocomplete no longer opens merely by focusing an address field with a saved address.
-- Address suggestions now start only after the user types at least 3 characters.
-- No SQL migration required for this hotfix.
-
 # Changelog
 
-## V2.1.0 — Workflow + Calendar Rebuild
+## V2.3.0 — Hair System Core Workflow
 
-### Lead / Customer
-- Lead can start with only WhatsApp display name; real name and phone are optional.
-- Lead conversion preserves WhatsApp identity and does not invent a real name when it is unknown.
-- Customer cards/profile use a safe display fallback: real name → WhatsApp name → phone.
-- Clear Book Appointment vs Start Service explanation in Customer Profile.
+### Business logic
+- Lead stays a lead until consultation is signed.
+- Consultation is separated from technical Service.
+- Consultation outcome: Signed / Follow up / Not signed.
+- Signed outcome creates a Client + Deal.
+- Deal records Hair System specs, source, price, discount, deposit and balance.
+- Ready stock can be reserved at signing.
+- New System Installation activates the client and installs the reserved system.
+- Maintenance cycle only applies to Active Clients.
 
-### Calendar / Appointment
-- Rebuilt Calendar with Month / Week / Day / Agenda / Map.
-- Click empty date/time to create a booking.
-- Click booking to open details.
-- Separate Date + Start Time fields for easy rescheduling.
-- Desktop drag/drop to reschedule Month / Week / Day bookings.
-- Booking details use an Asana-style right-side pane on desktop and bottom sheet on mobile.
-- Month/Week consistently start Monday.
-- Team filter, Today navigation and date jump retained.
-- In-progress appointments stay blocked by database overlap protection.
+### Calendar
+- Consultation bookings can belong to Leads before a Client record exists.
+- Consultation events use Start / Continue Consultation.
+- Technical service events use Start / Continue Service.
+- Month / Week / Day / Agenda / Map remain available.
 
-### Service
-- Service is now explicitly actual work, not another booking form.
-- Booked appointment → Start Service → In Progress → Complete.
-- Walk-in Service automatically creates a Calendar appointment first.
-- Completion updates Calendar appointment to Completed.
-- Completion records service history, payment, consumable deductions and next maintenance.
-- Completion screen offers Customer / Before-After / Book next visit.
-- Added Follow-up tab for due maintenance.
+### Staff operations
+- Dashboard now shows My Jobs for the logged-in admin/staff member.
+- Appointment assignment creates in-app notifications.
+- Rescheduling an assigned job creates an in-app notification.
+- Bell notification center added on desktop and mobile.
 
-### Before / After
-- Functional upload flow with Customer + Service association.
-- Before / Process / After types.
-- Consent: private / public blur / public.
-- Gallery, Compare, signed private images, delete, mobile camera capture.
+### Customer profile
+- Signed Client and Active Client are visually different.
+- Signed Client prioritizes Book Installation.
+- Active Client prioritizes Maintenance / technical service.
+- Signed Deal summary added.
 
-### Payments
-- All / Outstanding / Paid / Refund filters.
-- Search by customer/method/reference.
-- One-tap Mark Paid for outstanding payments.
-
-### UI / Mobile
-- Reworked visual hierarchy, spacing, typography, forms, cards and tactile buttons.
-- Desktop sidebar retained; mobile bottom nav reduced to 5 primary actions.
-- Mobile forms and booking details become bottom-sheet style.
-- Calendar defaults to Day on smaller screens; Month/Week remain available.
-
-## V2.0.3
-- Fixed Google Places Autocomplete 400 error caused by invalid location-bias radius.
-- JB location bias set to 35 km.
-
-## V2.0.1
-- Fixed PostgreSQL 42P17 appointment exclusion constraint by materializing blocked_start / blocked_end.
-
-## V2.2.0 — UI / mobile / customer portal preview
-- Fixed Before / After toolbar layout so Gallery / Compare tabs no longer collapse into a tiny scroll box.
-- Calendar booking actions now distinguish Start service from Continue service.
-- In-progress/completed appointment status is system-managed by Service and no longer manually selectable.
-- Added SPA browser-history navigation: phone/browser Back returns to the previous in-app screen instead of immediately leaving the web app after normal navigation.
-- Every main screen/customer screen navigation scrolls back to the top.
-- Mobile UI polish for page headers, tabs, calendar controls, customer actions, modals and bottom navigation.
-- Added Customer View preview from Customer Profile for testing the future customer portal UI.
-- Added customer portal preview for next appointment, hair system, account credit, outstanding amount, service history, photos and payments.
-- No database migration required for V2.2.0.
+### Next phases
+- V2.4: real Customer Login + self-booking + available slots + loyalty points.
+- V2.5: WhatsApp Cloud API + Email automation + appointment reminders + notification delivery logs.

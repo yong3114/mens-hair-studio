@@ -37,3 +37,8 @@ supabase/
   01_PREP_SCHEMA.sql               Fresh V2.1 project only
   02_FINAL_RLS_LOCKDOWN.sql        Run only after real testing
   03_V2_1_WORKFLOW_MIGRATION.sql   Existing V2.0.x → V2.1
+
+V2.3 additions:
+- src/pages/Sales.jsx
+- supabase/04_V2_3_HAIR_SYSTEM_CORE.sql
+- notifications / consultations / deals tables

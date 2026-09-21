@@ -1,3 +1,9 @@
+# V2.3.1
+- Fix desktop notification popover clipping.
+- Add clear notifications.
+- Add testing-friendly delete controls for bookings, clients and payments.
+- Improve lead delete cleanup.
+
 # Changelog
 
 ## V2.3.0 — Hair System Core Workflow

@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react'
-import { Plus, ChevronLeft, ChevronRight, MapPin, GripVertical, Play } from 'lucide-react'
-import { listAppointments, listCustomers, listLeads, listProfiles, saveAppointment, saveLead } from '../lib/api'
+import { Plus, ChevronLeft, ChevronRight, MapPin, GripVertical, Play, Trash2 } from 'lucide-react'
+import { listAppointments, listCustomers, listLeads, listProfiles, saveAppointment, saveLead, deleteAppointment } from '../lib/api'
 import { Badge, Empty, Field, Drawer, Tabs } from '../components/UI'
 import PlaceAutocomplete from '../components/PlaceAutocomplete'
 import { customerLabel, dateTime, leadLabel, localDateKey, mapsUrl, personLabel, timeOnly, wazeUrl } from '../lib/utils'
@@ -32,6 +32,8 @@ export default function Appointments({prefill,onStartService,onStartConsultation
  const consultPersonValue=form.lead_id?`lead:${form.lead_id}`:form.customer_id?`customer:${form.customer_id}`:''
  const currentRow=editing?rows.find(x=>x.id===editing):null
  const action=()=>{const a={...currentRow,...form,id:editing,scheduled_at:formToAppointment(form).scheduled_at,customers:currentRow?.customers,leads:currentRow?.leads};setOpen(false);isConsultationType(form.service_type)?onStartConsultation?.(a):onStartService?.(a)}
+
+ const removeBooking=async()=>{if(!editing)return;if(['in_progress','completed'].includes(form.status)){setError('Started or completed bookings cannot be deleted here. Delete the test client/history instead.');return}if(!confirm('Delete this booking? This is intended for test or incorrect bookings.'))return;try{await deleteAppointment(editing);setOpen(false);setEditing(null);setNotice('Booking deleted');setTimeout(()=>setNotice(''),2200);await load()}catch(e){setError(e.message)}}
  return <div className="page calendar-page">
   <div className="page-head"><div><span className="eyebrow">SCHEDULE</span><h1>Calendar</h1><p>Consultations and technical services share one calendar, but use different workflows.</p></div><button className="btn btn-primary" onClick={()=>openNew(new Date(),'10:00')}><Plus size={18}/>New booking</button></div>
   {notice&&<div className="toast-inline">{notice}</div>}
@@ -46,7 +48,7 @@ export default function Appointments({prefill,onStartService,onStartConsultation
    <Field label="Status">{['in_progress','completed'].includes(form.status)?<div className="status-readonly"><Badge tone={statusTone(form.status)}>{form.status.replace('_',' ')}</Badge><span>Managed by {isConsultationType(form.service_type)?'Consultation':'Service'}</span></div>:<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{['tentative','confirmed','cancelled','no-show'].map(x=><option key={x}>{x.replace('_',' ')}</option>)}</select>}</Field><Field label="Location"><select value={form.location_type} onChange={e=>setForm({...form,location_type:e.target.value})}><option value="studio">Studio</option><option value="home">Home visit</option></select></Field>
    {form.location_type==='home'&&<><Field label="Travel buffer"><div className="dual-input"><input title="Before" type="number" min="0" step="15" value={form.travel_buffer_before} onChange={e=>setForm({...form,travel_buffer_before:e.target.value})}/><input title="After" type="number" min="0" step="15" value={form.travel_buffer_after} onChange={e=>setForm({...form,travel_buffer_after:e.target.value})}/></div></Field><div className="span-2"><PlaceAutocomplete value={{place_name:form.place_name,formatted_address:form.address,google_place_id:form.google_place_id,lat:form.lat,lng:form.lng,google_maps_url:form.google_maps_url}} onChange={p=>setForm({...form,address:p.formatted_address,place_name:p.place_name,google_place_id:p.google_place_id,lat:p.lat,lng:p.lng,google_maps_url:p.google_maps_url})}/></div><Field label="Address"><textarea value={form.address||''} onChange={e=>setForm({...form,address:e.target.value})}/></Field></>}
    <Field label="Notes"><textarea value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})}/></Field>
-   <div className="form-actions booking-actions">{editing&&['tentative','confirmed','in_progress'].includes(form.status)&&<button type="button" className="btn btn-service" onClick={action}><Play size={16}/>{form.status==='in_progress'?'Continue ': 'Start '}{isConsultationType(form.service_type)?'consultation':'service'}</button>}<span className="grow"/><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Cancel</button><button className="btn btn-primary">Save booking</button></div>
+   <div className="form-actions booking-actions">{editing&&!['in_progress','completed'].includes(form.status)&&<button type="button" className="btn btn-danger-ghost" onClick={removeBooking}><Trash2 size={16}/>Delete</button>}{editing&&['tentative','confirmed','in_progress'].includes(form.status)&&<button type="button" className="btn btn-service" onClick={action}><Play size={16}/>{form.status==='in_progress'?'Continue ': 'Start '}{isConsultationType(form.service_type)?'consultation':'service'}</button>}<span className="grow"/><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Cancel</button><button className="btn btn-primary">Save booking</button></div>
   </form></Drawer>
  </div>
 }

@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import { Home, Users, UserRound, CalendarDays, Scissors, Boxes, WalletCards, Image, History, Settings, LogOut, Menu, X, HandCoins, Bell, CheckCheck } from 'lucide-react'
-import { listNotifications, markAllNotificationsRead, markNotificationRead } from '../lib/api'
+import { listNotifications, markAllNotificationsRead, markNotificationRead, clearNotifications } from '../lib/api'
 import { dateTime } from '../lib/utils'
 
 const nav=[
@@ -14,7 +14,7 @@ function NotificationBell({profile,onOpenCalendar}){
  useEffect(()=>{load();const t=setInterval(load,30000);return()=>clearInterval(t)},[profile?.id])
  const unread=useMemo(()=>rows.filter(x=>!x.read_at),[rows])
  const openItem=async n=>{if(!n.read_at)await markNotificationRead(n.id).catch(()=>{});setOpen(false);await load();if(n.appointment_id)onOpenCalendar?.()}
- return <div className="notification-wrap"><button className="icon-btn notification-btn" onClick={()=>setOpen(!open)} aria-label="Notifications"><Bell size={19}/>{unread.length>0&&<span className="notification-count">{unread.length>9?'9+':unread.length}</span>}</button>{open&&<div className="notification-popover"><div className="notification-head"><div><span className="eyebrow">NOTIFICATIONS</span><strong>{unread.length} unread</strong></div>{unread.length>0&&<button className="text-btn" onClick={async()=>{await markAllNotificationsRead(profile.id);await load()}}><CheckCheck size={14}/>Read all</button>}</div><div className="notification-list">{rows.length?rows.slice(0,12).map(n=><button key={n.id} className={!n.read_at?'unread':''} onClick={()=>openItem(n)}><span className="notification-dot"/><div><strong>{n.title}</strong><p>{n.body}</p><small>{dateTime(n.created_at)}</small></div></button>):<div className="notification-empty">No notifications yet.</div>}</div><div className="notification-foot">Email / WhatsApp delivery will be connected in the Automation phase.</div></div>}</div>
+ return <div className="notification-wrap"><button className="icon-btn notification-btn" onClick={()=>setOpen(!open)} aria-label="Notifications"><Bell size={19}/>{unread.length>0&&<span className="notification-count">{unread.length>9?'9+':unread.length}</span>}</button>{open&&<div className="notification-popover"><div className="notification-head"><div><span className="eyebrow">NOTIFICATIONS</span><strong>{unread.length} unread</strong></div>{unread.length>0&&<button className="text-btn" onClick={async()=>{await markAllNotificationsRead(profile.id);await load()}}><CheckCheck size={14}/>Read all</button>}</div><div className="notification-list">{rows.length?rows.slice(0,12).map(n=><button key={n.id} className={!n.read_at?'unread':''} onClick={()=>openItem(n)}><span className="notification-dot"/><div><strong>{n.title}</strong><p>{n.body}</p><small>{dateTime(n.created_at)}</small></div></button>):<div className="notification-empty">No notifications yet.</div>}</div><div className="notification-foot"><span>Email / WhatsApp delivery will be connected in the Automation phase.</span>{rows.length>0&&<button className="text-btn danger-text" onClick={async()=>{if(confirm('Clear all notifications for this account?')){await clearNotifications(profile.id);await load()}}}>Clear</button>}</div></div>}</div>
 }
 
 export default function Layout({page,setPage,profile,onLogout,children}){

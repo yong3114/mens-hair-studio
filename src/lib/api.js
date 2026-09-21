@@ -27,7 +27,13 @@ export async function getDashboard(userId=null) {
 
 export async function listLeads(){ return ok(await supabase.from('leads').select('*').order('created_at',{ascending:false})) }
 export async function saveLead(payload,id){ return ok(id ? await supabase.from('leads').update(payload).eq('id',id).select().single() : await supabase.from('leads').insert(payload).select().single()) }
-export async function deleteLead(id){ return ok(await supabase.from('leads').delete().eq('id',id)) }
+export async function deleteLead(id){
+  // Testing-friendly cleanup: remove linked consultation bookings first so deleted leads do not leave orphan calendar records.
+  const appts = await supabase.from('appointments').select('id').eq('lead_id',id); ok(appts)
+  if(appts.data?.length){ const ids=appts.data.map(x=>x.id); ok(await supabase.from('consultations').delete().in('appointment_id',ids)); ok(await supabase.from('appointments').delete().in('id',ids)) }
+  ok(await supabase.from('consultations').delete().eq('lead_id',id))
+  return ok(await supabase.from('leads').delete().eq('id',id))
+}
 export async function convertLead(leadId, customerName=null){ const { data, error } = await supabase.rpc('convert_lead_to_customer_v2',{ p_lead_id: leadId, p_customer_name: customerName || null }); if(error) throw error; return data }
 
 export async function listCustomers(){ return ok(await supabase.from('customers').select('*').order('created_at',{ascending:false})) }
@@ -45,6 +51,22 @@ export async function getCustomer(id){
   return {customer:c.data, appointments:a.data, services:s.data, systems:h.data, payments:p.data, credits:cr.data, media:m.data, deals:d.data}
 }
 export async function saveCustomer(payload,id){ return ok(id ? await supabase.from('customers').update(payload).eq('id',id).select().single() : await supabase.from('customers').insert(payload).select().single()) }
+export async function deleteTestCustomer(id){
+  const c = ok(await supabase.from('customers').select('id,source_lead_id').eq('id',id).single())
+  const media = ok(await supabase.from('media').select('storage_path').eq('customer_id',id)) || []
+  if(media.length){ const paths=media.map(x=>x.storage_path).filter(Boolean); if(paths.length) ok(await supabase.storage.from('customer-media').remove(paths)) }
+  const appts = ok(await supabase.from('appointments').select('id').eq('customer_id',id)) || []
+  if(appts.length){ const ids=appts.map(x=>x.id); ok(await supabase.from('consultations').delete().in('appointment_id',ids)); ok(await supabase.from('appointments').delete().in('id',ids)) }
+  ok(await supabase.from('consultations').delete().eq('customer_id',id))
+  ok(await supabase.from('hair_systems').update({customer_id:null,status:'available',reserved_at:null,installed_date:null}).eq('customer_id',id))
+  ok(await supabase.from('customers').delete().eq('id',id))
+  if(c?.source_lead_id){
+    ok(await supabase.from('consultations').delete().eq('lead_id',c.source_lead_id))
+    ok(await supabase.from('appointments').delete().eq('lead_id',c.source_lead_id))
+    ok(await supabase.from('leads').delete().eq('id',c.source_lead_id))
+  }
+  return true
+}
 
 export async function listProfiles(){ return ok(await supabase.from('profiles').select('id,full_name,role,active,email').eq('active',true).order('full_name')) }
 export async function listAppointments(start,end){
@@ -53,6 +75,11 @@ export async function listAppointments(start,end){
   return ok(await q)
 }
 export async function saveAppointment(payload,id){ return ok(id ? await supabase.from('appointments').update(payload).eq('id',id).select().single() : await supabase.from('appointments').insert(payload).select().single()) }
+export async function deleteAppointment(id){
+  // Only use for bookings that have not progressed into a completed technical record.
+  ok(await supabase.from('consultations').delete().eq('appointment_id',id))
+  return ok(await supabase.from('appointments').delete().eq('id',id))
+}
 
 export async function listConsultations(limit=300){ return ok(await supabase.from('consultations').select('*,appointments(id,scheduled_at,service_type,status),leads(id,name,whatsapp_name,phone,stage),customers(id,name,whatsapp_name,phone,lifecycle_stage),profiles!consultations_consultant_id_fkey(id,full_name)').order('created_at',{ascending:false}).limit(limit)) }
 export async function startConsultation(appointmentId,consultantId=null){ const {data,error}=await supabase.rpc('start_consultation',{p_appointment_id:appointmentId,p_consultant_id:consultantId||null}); if(error)throw error; return data }
@@ -72,12 +99,14 @@ export async function adjustConsumable(id,qty,reason){ const {data,error}=await 
 
 export async function createPayment(payload){ return ok(await supabase.from('payments').insert(payload).select().single()) }
 export async function updatePayment(id,payload){ return ok(await supabase.from('payments').update(payload).eq('id',id).select().single()) }
+export async function deletePayment(id){ return ok(await supabase.from('payments').delete().eq('id',id)) }
 export async function createCredit(payload){ return ok(await supabase.from('credit_transactions').insert(payload).select().single()) }
 export async function listPayments(){ return ok(await supabase.from('payments').select('*,customers(name,whatsapp_name)').order('created_at',{ascending:false}).limit(500)) }
 
 export async function listNotifications(userId){ return ok(await supabase.from('notifications').select('*').eq('recipient_user_id',userId).order('created_at',{ascending:false}).limit(50)) }
 export async function markNotificationRead(id){ return ok(await supabase.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id).select().single()) }
 export async function markAllNotificationsRead(userId){ return ok(await supabase.from('notifications').update({read_at:new Date().toISOString()}).eq('recipient_user_id',userId).is('read_at',null).select()) }
+export async function clearNotifications(userId){ return ok(await supabase.from('notifications').delete().eq('recipient_user_id',userId)) }
 
 export async function listActivity(){ return ok(await supabase.from('activity_log').select('*,profiles(full_name)').order('created_at',{ascending:false}).limit(300)) }
 export async function listMedia(){ return ok(await supabase.from('media').select('*,customers(id,name,whatsapp_name),services(id,service_type,completed_at)').order('created_at',{ascending:false}).limit(400)) }
@@ -91,7 +120,7 @@ export async function deleteMedia(row){ const storage = await supabase.storage.f
 
 export async function exportAll(){
   const tables=['profiles','leads','customers','appointments','consultations','deals','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','notifications','activity_log']
-  const out={exported_at:new Date().toISOString(),version:'2.3.0',data:{}}
+  const out={exported_at:new Date().toISOString(),version:'2.3.1',data:{}}
   for(const t of tables){ const r=await supabase.from(t).select('*'); out.data[t]=ok(r) }
   return out
 }

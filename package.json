@@ -1,7 +1,7 @@
 {
-  "name": "mens-hair-studio-v2-3-4-leads-status",
+  "name": "mens-hair-studio-v2-3-5-lead-crm",
   "private": true,
-  "version": "2.3.4",
+  "version": "2.3.5",
   "type": "module",
   "scripts": {
     "dev": "vite",

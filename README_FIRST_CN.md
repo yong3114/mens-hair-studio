@@ -1,3 +1,7 @@
+# V2.3.5 Lead CRM Logic Rebuild
+
+> 升级现有 V2.3.4 时，先运行 `supabase/06_V2_3_5_LEAD_CRM.sql`。
+
 # Men's Hair Studio V2.3.4 — Leads CRM + Workflow Status
 
 当前主流程：

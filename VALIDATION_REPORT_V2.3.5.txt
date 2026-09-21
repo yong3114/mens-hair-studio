@@ -1,0 +1,68 @@
+MEN'S HAIR STUDIO V2.3.5 — VALIDATION REPORT
+==============================================
+
+Scope: Lead CRM logic rebuild only.
+
+Static code checks
+------------------
+JS / JSX files parsed: 23
+Syntax errors: 0
+Missing relative imports: 0
+CSS brace balance: 0
+Package version: 2.3.5
+
+Lead CRM checks
+---------------
+PASS — Stage, Interest, Follow-up and Contact Log are separate concepts.
+PASS — New Lead can exist without a follow-up date.
+PASS — Interest values: Unknown / Interested / Considering / Not interested.
+PASS — Stage values: New / Contacted / Consultation booked / Consultation done / Signed / Lost.
+PASS — Logging contact does not create a Follow-up stage.
+PASS — Follow-up filter is driven by scheduled follow-up date.
+PASS — Dashboard Follow-ups Due is driven by follow_up_date, not stage.
+PASS — Contact history stores outcome and interest_after.
+PASS — Consultation follow-up outcome returns Stage=Consultation done + Interest=Considering.
+PASS — Signed consultation sets Stage=Signed + Interest=Interested.
+PASS — Not-signed consultation sets Stage=Lost + Interest=Not interested.
+PASS — Existing legacy Interested/Follow-up stage values are migrated to Contacted.
+
+Expected transition examples
+----------------------------
+New lead:
+  Stage=New, Interest=Unknown, Follow-up=null
+
+First WhatsApp, customer asks price:
+  Contact outcome=Interested
+  Stage: New -> Contacted
+  Interest: Interested
+  Follow-up remains null unless explicitly chosen
+
+Customer says "I will think about it next week":
+  Contact outcome=Considering
+  Stage remains Contacted
+  Interest=Considering
+  Follow-up=chosen date
+
+Consultation booked:
+  Stage=Consultation booked
+  Interest becomes Interested only if it was still Unknown
+
+Consultation completed but customer needs time:
+  Stage=Consultation done
+  Interest=Considering
+  Follow-up=chosen date
+
+Signed:
+  Stage=Signed
+  Interest=Interested
+  Follow-up cleared
+
+Not signed / closed:
+  Stage=Lost
+  Interest=Not interested
+  Follow-up cleared
+
+Build note
+----------
+The container could not finish npm install within the tool timeout, so a full Vite production build was not claimed here.
+The final production build gate remains the user's GitHub Actions build/deploy check.

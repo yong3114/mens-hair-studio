@@ -1,3 +1,16 @@
+# V2.3.5 — Lead CRM logic rebuild
+
+- Separated **Stage**, **Interest**, **Follow-up date**, and **Contact Log**.
+- New leads no longer require a follow-up date.
+- Stage is a workflow position: New → Contacted → Consultation booked → Consultation done → Signed/Lost.
+- Interest is independent: Unknown / Interested / Considering / Not interested.
+- Logging a contact never forces the lead into a fake Follow-up stage.
+- Follow-up date is optional and drives reminders only.
+- Leads page filters simplified to All / New / Interested / Follow-up / Consultation / Lost.
+- Direct row/card click still opens Lead Details.
+- Contact history now records outcome and resulting interest.
+- Dashboard Follow-ups Due now uses the actual scheduled follow-up date, not a stage name.
+
 # V2.3.3 — Mobile Overlay & UX Reliability
 
 - Render Modal / Drawer through a React portal so dialogs are positioned against the real viewport, not animated page containers.

@@ -4,6 +4,7 @@ import { collectPaged } from '../src/lib/paging.js'
 import { nextCalendarCursor } from '../src/lib/calendar.js'
 import { customerLabel, leadLabel, personLabel } from '../src/lib/utils.js'
 import { canDirectInstallHairSystem, canMoveAppointment } from '../src/lib/guards.js'
+import { accountOutstanding } from '../src/lib/finance.js'
 
 test('backup pagination exports more than one database page',async()=>{
   const source=Array.from({length:1203},(_,i)=>({id:i+1}))
@@ -42,4 +43,14 @@ test('started or completed appointments cannot be moved',()=>{
 test('only available hair systems can be directly installed',()=>{
   assert.equal(canDirectInstallHairSystem('available'),true)
   for(const status of ['reserved','installed','damaged','returned'])assert.equal(canDirectInstallHairSystem(status),false)
+})
+
+
+test('account outstanding does not double count deal-linked outstanding payments',()=>{
+  const deals=[{status:'installation_booked',balance_amount:80}]
+  const payments=[
+    {status:'outstanding',type:'balance',amount:80,payment_allocations:[{deal_id:'deal-1',amount:80}]},
+    {status:'outstanding',type:'sale',amount:25,payment_allocations:[]}
+  ]
+  assert.equal(accountOutstanding(deals,payments),105)
 })

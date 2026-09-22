@@ -4,6 +4,7 @@ import { getDashboard } from '../lib/api'
 import { localDateKey, money, personLabel, timeOnly } from '../lib/utils'
 import { isConsultationType } from '../lib/calendar'
 import { Badge, Empty, Stat } from '../components/UI'
+import { accountOutstanding } from '../lib/finance'
 
 export default function Dashboard({go,profile,onStartService,onStartConsultation}){
  const [d,setD]=useState(null),[err,setErr]=useState('')
@@ -16,7 +17,7 @@ export default function Dashboard({go,profile,onStartService,onStartConsultation
   const openLeads=d.leads.filter(x=>!['signed','customer','lost'].includes(x.stage))
   const followups=openLeads.filter(x=>x.follow_up_date&&x.follow_up_date<=today)
   const low=d.consumables.filter(x=>Number(x.qty)<=Number(x.min_qty))
-  const outstanding=d.payments.filter(x=>x.status==='outstanding').reduce((a,x)=>a+Number(x.amount||0),0)
+  const outstanding=accountOutstanding(d.deals,d.payments)
   const sales=d.payments.filter(x=>localDateKey(x.paid_at||x.created_at)===today&&x.status==='paid'&&x.type!=='refund').reduce((a,x)=>a+Number(x.amount||0),0)
   const latestServiceByCustomer=new Map();[...d.services].sort((a,b)=>new Date(b.completed_at||b.started_at)-new Date(a.completed_at||a.started_at)).forEach(x=>{if(x.customer_id&&!latestServiceByCustomer.has(x.customer_id))latestServiceByCustomer.set(x.customer_id,x)});const maintenanceDue=[...latestServiceByCustomer.values()].filter(x=>x.next_maintenance_date&&x.next_maintenance_date<=today)
   const signedThisMonth=d.deals.filter(x=>{const dt=new Date(x.signed_at);const now=new Date();return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear()})

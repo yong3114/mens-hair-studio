@@ -3,17 +3,19 @@ import { ArrowLeft, CalendarDays, CreditCard, Scissors, WalletCards, ChevronRigh
 import { getCustomer, signedMedia } from '../lib/api'
 import { Badge, Empty } from '../components/UI'
 import { customerLabel, dateTime, money, shortDate, mapsUrl } from '../lib/utils'
+import { accountOutstanding, dealPaidAmount, dealRefundedAmount } from '../lib/finance'
 
 export default function CustomerPortalPreview({id,onExit,onBook}){
  const[d,setD]=useState(null),[urls,setUrls]=useState({}),[tab,setTab]=useState('home')
  useEffect(()=>{getCustomer(id).then(setD)},[id])
  useEffect(()=>{if(!d?.media?.length){setUrls({});return}Promise.all(d.media.map(async m=>[m.id,await signedMedia(m.storage_path).catch(()=>null)])).then(x=>setUrls(Object.fromEntries(x)))},[d?.media?.length])
  useEffect(()=>{window.scrollTo({top:0,left:0,behavior:'auto'})},[tab])
- const stats=useMemo(()=>{if(!d)return{};const credit=d.credits.reduce((a,x)=>a+(x.type==='use'?-1:1)*Number(x.amount||0),0);const outstanding=d.payments.filter(x=>x.status==='outstanding').reduce((a,x)=>a+Number(x.amount||0),0);return{credit,outstanding}},[d])
+ const stats=useMemo(()=>{if(!d)return{};const credit=d.credits.reduce((a,x)=>a+(x.type==='use'?-1:1)*Number(x.amount||0),0);const outstanding=accountOutstanding(d.deals,d.payments);return{credit,outstanding}},[d])
  if(!d)return <div className="portal-shell"><div className="portal-loading">Loading customer portal…</div></div>
  const c=d.customer
  const upcoming=d.appointments.filter(x=>!['completed','cancelled','no-show'].includes(x.status)&&new Date(x.scheduled_at)>=new Date()).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at))[0]
  const currentSystem=d.systems.find(x=>x.status==='installed')||d.systems[0]
+ const currentDeal=d.deals?.find(x=>x.status!=='cancelled')||null
  const completed=d.services.filter(x=>x.status==='completed')
  const last=completed[0]
  const media=d.media.slice(0,24)
@@ -41,6 +43,7 @@ export default function CustomerPortalPreview({id,onExit,onBook}){
      {tab==='account'&&<>
        <section className="portal-hero compact"><span className="portal-kicker">MY ACCOUNT</span><h1>Payments & credit</h1><p>Track account credit, outstanding balances and recent payments.</p></section>
        <div className="portal-summary-grid account"><article><WalletCards size={19}/><span>Account credit</span><strong>{money(stats.credit)}</strong></article><article><CreditCard size={19}/><span>Outstanding</span><strong>{money(stats.outstanding)}</strong></article></div>
+       {currentDeal&&<section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">ORDER</span><h2>Hair system balance</h2></div></div><div className="portal-profile"><div><span>Total</span><strong>{money(currentDeal.final_price)}</strong></div><div><span>Paid</span><strong>{money(dealPaidAmount(currentDeal))}</strong></div><div><span>Refunded</span><strong>{money(dealRefundedAmount(currentDeal))}</strong></div><div><span>Balance</span><strong>{money(currentDeal.balance_amount)}</strong></div></div></section>}
        <section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">PAYMENTS</span><h2>Recent transactions</h2></div></div>{d.payments.length?<div className="portal-payments">{d.payments.slice(0,30).map(p=><div key={p.id}><div><strong>{p.type}</strong><span>{shortDate(p.paid_at||p.created_at)} · {p.method}</span></div><div><strong>{money(p.amount)}</strong><Badge tone={p.status==='paid'?'success':p.status==='outstanding'?'warn':'neutral'}>{p.status}</Badge></div></div>)}</div>:<Empty title="No payments yet"/>}</section>
        {d.credits.length>0&&<section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">CREDIT HISTORY</span><h2>Account credit</h2></div></div><div className="portal-payments">{d.credits.slice(0,30).map(x=><div key={x.id}><div><strong>{x.type}</strong><span>{shortDate(x.created_at)} · {x.notes||''}</span></div><strong>{x.type==='use'?'-':'+'}{money(x.amount)}</strong></div>)}</div></section>}
      </>}

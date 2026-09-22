@@ -21,19 +21,20 @@ import Settings from './pages/Settings'
 const initialHistoryState={hairStudio:true,page:'dashboard',customerId:null,portalCustomerId:null}
 
 export default function App(){
- const[session,setSession]=useState(null),[profile,setProfile]=useState(null),[loading,setLoading]=useState(true)
+ const[session,setSession]=useState(null),[profile,setProfile]=useState(null),[profileError,setProfileError]=useState(''),[loading,setLoading]=useState(true)
  const[page,setPage]=useState(()=>window.history.state?.hairStudio?window.history.state.page:'dashboard')
  const[customerId,setCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.customerId:null)
  const[portalCustomerId,setPortalCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.portalCustomerId:null)
  const[appointmentPrefill,setAppointmentPrefill]=useState(null),[servicePrefill,setServicePrefill]=useState(null),[salesPrefill,setSalesPrefill]=useState(null),[mediaPrefill,setMediaPrefill]=useState(null)
 
  useEffect(()=>{if(!configured){setLoading(false);return} supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[])
- useEffect(()=>{if(session?.user?.id)getProfile(session.user.id).then(setProfile).catch(()=>setProfile({id:session.user.id,full_name:session.user.email?.split('@')[0],role:'admin'}));else setProfile(null)},[session?.user?.id])
+ useEffect(()=>{let active=true;if(session?.user?.id){setProfile(null);setProfileError('');getProfile(session.user.id).then(p=>{if(!p?.active)throw new Error('This staff account is inactive.');if(active)setProfile(p)}).catch(e=>{if(active){setProfile(null);setProfileError(e.message||'Could not verify staff access.')}})}else{setProfile(null);setProfileError('')}return()=>{active=false}},[session?.user?.id])
  useEffect(()=>{if(!window.history.state?.hairStudio)window.history.replaceState(initialHistoryState,'');const onPop=e=>{const s=e.state?.hairStudio?e.state:initialHistoryState;setPage(s.page||'dashboard');setCustomerId(s.customerId||null);setPortalCustomerId(s.portalCustomerId||null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[])
  useEffect(()=>{requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},[page,customerId,portalCustomerId])
 
  if(loading)return <div className="app-loading">Loading...</div>
  if(!session)return <Login/>
+ if(!profile){if(profileError)return <div className="app-loading"><div><strong>Staff access unavailable</strong><p>{profileError}</p><button className="btn btn-ghost" onClick={()=>supabase.auth.signOut()}>Sign out</button></div></div>;return <div className="app-loading">Checking staff access...</div>}
 
  const navigate=(nextPage,{customer=null,portal=null,replace=false}={})=>{const next={hairStudio:true,page:nextPage,customerId:customer,portalCustomerId:portal};const same=page===nextPage&&customerId===customer&&portalCustomerId===portal;if(same){window.scrollTo({top:0,left:0,behavior:'smooth'});return}if(replace)window.history.replaceState(next,'');else window.history.pushState(next,'');setPage(nextPage);setCustomerId(customer);setPortalCustomerId(portal);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null)}
  const go=p=>navigate(p)

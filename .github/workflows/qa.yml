@@ -1,0 +1,43 @@
+name: Hair Studio QA
+
+on:
+  push:
+    branches:
+      - 'qa/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: qa-placeholder-key
+          VITE_GOOGLE_MAPS_API_KEY: qa-placeholder-key
+
+      - name: Regression tests
+        run: npm test
+
+      - name: Whitespace check
+        run: git diff --check "$(git merge-base HEAD origin/main)"..HEAD

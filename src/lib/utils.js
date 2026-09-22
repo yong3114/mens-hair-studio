@@ -32,8 +32,8 @@ export const addMinutes = (value, minutes) => { const d=new Date(value); d.setMi
 export const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
 export const todayISO = () => localDateKey(new Date())
 export const isSameLocalDay = (a,b) => localDateKey(a)===localDateKey(b)
-export const leadLabel = (x={}) => x.whatsapp_name?.trim() || x.name?.trim() || x.phone?.trim() || 'Unnamed lead'
-export const customerLabel = (x={}) => x.name?.trim() || x.whatsapp_name?.trim() || x.phone?.trim() || 'Customer'
+export const leadLabel = (x={}) => { const v=x||{}; return v.whatsapp_name?.trim() || v.name?.trim() || v.phone?.trim() || 'Unnamed lead' }
+export const customerLabel = (x={}) => { const v=x||{}; return v.name?.trim() || v.whatsapp_name?.trim() || v.phone?.trim() || 'Customer' }
 export const initials = (x={}) => customerLabel(x).slice(0,1).toUpperCase() || 'C'
 export const mapsUrl = ({lat,lng,address}) => lat && lng
   ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
@@ -42,4 +42,4 @@ export const wazeUrl = ({lat,lng,address}) => lat && lng
   ? `https://www.waze.com/ul?ll=${lat}%2C${lng}&navigate=yes`
   : `https://www.waze.com/ul?q=${encodeURIComponent(address || '')}&navigate=yes`
 
-export const personLabel = (x={}) => x.customers ? customerLabel(x.customers) : x.leads ? leadLabel(x.leads) : 'Unassigned person'
+export const personLabel = (x={}) => { const v=x||{}; return v.customers ? customerLabel(v.customers) : v.leads ? leadLabel(v.leads) : 'Unassigned person' }

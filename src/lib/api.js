@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { collectPaged } from './paging'
 
 const ok = (r) => { if (r.error) throw r.error; return r.data }
 
@@ -13,7 +14,7 @@ export async function getDashboard(userId=null) {
     supabase.from('hair_systems').select('id,status'),
     supabase.from('consumables').select('id,qty,min_qty,name,unit'),
     supabase.from('payments').select('id,amount,status,type,paid_at,created_at'),
-    supabase.from('services').select('id,customer_id,status,service_type,started_at,completed_at,next_maintenance_date,customers(name,whatsapp_name)').eq('status','completed').not('next_maintenance_date','is',null).order('completed_at',{ascending:false}).limit(500),
+    supabase.from('services').select('id,customer_id,status,service_type,started_at,completed_at,next_maintenance_date,customers(name,whatsapp_name)').eq('status','completed').order('completed_at',{ascending:false}).limit(500),
     supabase.from('consultations').select('id,status,outcome,follow_up_date,lead_id,customer_id,appointment_id').order('created_at',{ascending:false}).limit(100),
     supabase.from('deals').select('id,status,customer_id,final_price,deposit_amount,balance_amount,signed_at').order('signed_at',{ascending:false}).limit(100),
     userId ? supabase.from('notifications').select('*').eq('recipient_user_id',userId).is('read_at',null).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[],error:null})
@@ -120,7 +121,9 @@ export async function deleteMedia(row){ const storage = await supabase.storage.f
 
 export async function exportAll(){
   const tables=['profiles','leads','lead_followups','customers','appointments','consultations','deals','services','hair_systems','consumables','inventory_movements','payments','credit_transactions','media','notifications','activity_log']
-  const out={exported_at:new Date().toISOString(),version:'2.3.5',data:{}}
-  for(const t of tables){ const r=await supabase.from(t).select('*'); out.data[t]=ok(r) }
+  const out={exported_at:new Date().toISOString(),version:'2.3.6',notes:['Customer media files are not embedded in this JSON export.','Tables are exported sequentially, not as one transaction-level database snapshot.'],data:{}}
+  for(const t of tables){
+    out.data[t]=await collectPaged((from,to)=>supabase.from(t).select('*').order('id',{ascending:true}).range(from,to),1000)
+  }
   return out
 }

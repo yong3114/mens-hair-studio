@@ -1,4 +1,4 @@
-import { addDays, combineLocalDateTime, localDateKey, localTimeValue, startOfWeek } from './utils'
+import { addDays, combineLocalDateTime, localDateKey, localTimeValue, startOfWeek } from './utils.js'
 
 export const consultationTypes=['Free Home Consultation','Studio Consultation']
 export const serviceTypes=['Free Home Consultation','Studio Consultation','New System Installation','Maintenance','Cleaning + Rebond','Haircut / Adjustment','Hairline Touch-up','Other']

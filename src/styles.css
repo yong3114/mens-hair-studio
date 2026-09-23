@@ -524,3 +524,50 @@ body{overflow-x:hidden}
   .mobile-week-event>.badge{grid-column:2;justify-self:start}
   .mobile-week-event>svg{grid-column:3;grid-row:1/3}
 }
+
+
+/* V2.5 — customer portal login + compact mobile create buttons */
+.login-form{display:grid;gap:14px;margin-top:16px}
+.login-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:#ecebe7;border-radius:12px;margin-top:17px}
+.login-switch button{min-height:42px;border:0;border-radius:9px;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.login-switch button.active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(20,22,20,.08)}
+.customer-login-setup{display:grid;gap:5px;border:1px solid #ead5b4;background:#fffaf1;border-radius:12px;padding:11px 12px;color:#765d37}
+.customer-login-setup strong{font-size:12px}
+.customer-login-setup span{font-size:10.5px;line-height:1.5}
+.customer-login-hint{display:block;text-align:center;color:var(--muted);font-size:10.5px;line-height:1.45}
+.login-card .notice.success{display:grid;gap:3px}
+.login-card .notice.success strong{font-size:12px}
+.login-card .notice.success span{font-size:10.5px}
+
+.portal-live-bar{justify-content:space-between}
+.portal-live-brand{display:flex;align-items:center;gap:9px}
+.portal-live-brand .brand-mark{width:34px;height:34px;border-radius:10px;font-size:11px}
+.portal-live-brand strong,.portal-live-brand span{display:block}
+.portal-live-brand strong{font-size:12px}
+.portal-live-brand span{font-size:9px;color:var(--muted);margin-top:1px}
+.portal-inline-notice{position:sticky;top:8px;z-index:15;margin:0 auto 10px;max-width:760px;border:1px solid #d8d5ce;background:rgba(255,254,250,.96);backdrop-filter:blur(12px);border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.5;box-shadow:var(--shadow-sm)}
+
+.portal-access-editor{border:1px solid var(--line);background:#faf9f6;border-radius:13px;padding:12px}
+.portal-access-editor label{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.portal-access-editor input{width:18px;height:18px;min-height:18px;margin-top:1px;accent-color:var(--ink)}
+.portal-access-editor span{display:grid;gap:2px}
+.portal-access-editor strong{font-size:12px}
+.portal-access-editor small{font-size:10.5px;color:var(--muted);line-height:1.45}
+
+@media(max-width:560px){
+  .leads-page .page-head>.btn,
+  .calendar-page .page-head>.btn{
+    width:auto!important;
+    min-height:41px!important;
+    padding:0 13px!important;
+    border-radius:11px!important;
+    font-size:12px!important;
+    align-self:flex-start;
+    gap:6px;
+  }
+  .leads-page .page-head>.btn svg,
+  .calendar-page .page-head>.btn svg{width:16px;height:16px}
+  .login-card{padding:20px!important}
+  .login-switch button{min-height:40px}
+  .portal-live-bar{padding-left:12px;padding-right:12px}
+}

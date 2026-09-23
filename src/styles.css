@@ -427,3 +427,24 @@ body{overflow-x:hidden}
   .lead-history-item{padding:11px}
   .lead-history-meta{align-items:flex-start;flex-direction:column;gap:6px}
 }
+
+/* V2.3.7 — Signed/Lost lead progress state */
+.lead-progress-fields.single-status{
+  grid-template-columns:minmax(0,1fr);
+  max-width:520px;
+}
+.status-readonly-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:36px;
+}
+.lead-progress-fields.single-status .status-readonly{
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  padding:12px 13px;
+}
+@media(max-width:820px){
+  .lead-progress-fields.single-status{max-width:none}
+}

@@ -72,8 +72,7 @@ export default function Leads({onBookConsultation}){
      setEditing(saved.id)
      setForm({...blank,...saved,stage:normalizedStage(saved),potential_value:saved.potential_value??''})
      await load()
-     setNotice('Lead saved')
-     setTimeout(()=>setNotice(''),2200)
+     if(window.innerWidth<=820){setOpen(false)}else{setNotice('Lead saved');setTimeout(()=>setNotice(''),2200)}
    }catch(e){setError(e.message||'Could not save lead.')}
    finally{setBusy(false)}
  }

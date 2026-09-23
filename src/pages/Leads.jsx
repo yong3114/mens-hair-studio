@@ -122,7 +122,28 @@ export default function Leads({onBookConsultation}){
 
    {editing&&<div className="lead-detail-hero span-2"><div><span className="eyebrow">LEAD</span><h3>{leadLabel(form)}</h3><p>{form.phone||'No phone yet'}{form.area?` · ${form.area}`:''}</p><small>Lead since {dateTime(form.created_at)}</small></div><div className="lead-hero-badges"><Badge tone={stageTone(form.stage)}>{stageLabel(form.stage)}</Badge></div></div>}
 
-   <div className="lead-status-card span-2"><div><span className="eyebrow">PROGRESS</span><h3>Where is this lead now?</h3><p>Keep one simple status. Booking and signing update it automatically.</p></div><div className="lead-status-grid"><Field label="Status">{systemManaged?<div className="status-readonly"><Badge tone={stageTone(form.stage)}>{stageLabel(form.stage)}</Badge><span>{form.stage==='signed'?'Updated automatically when the deal is signed.':'Updated automatically from the consultation booking.'}</span></div>:<select value={form.stage||'new'} onChange={e=>setForm({...form,stage:e.target.value,lost_reason:e.target.value==='lost'?form.lost_reason:'',follow_up_date:e.target.value==='lost'?'':form.follow_up_date})}>{manualStages.map(v=><option key={v} value={v}>{stageLabel(v)}</option>)}</select>}</Field><Field label="Next follow-up" hint="Optional. Only set this when you really need to chase the lead."><input type="date" value={form.follow_up_date||''} disabled={['signed','lost'].includes(form.stage)} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/></Field></div></div>
+   <div className="lead-status-card span-2">
+    <div>
+     <span className="eyebrow">PROGRESS</span>
+     <h3>Where is this lead now?</h3>
+     <p>Keep one simple status. Booking and signing update it automatically.</p>
+    </div>
+    <div className="lead-progress-fields">
+     <Field label="Status">
+      {systemManaged
+       ? <div className="status-readonly">
+          <Badge tone={stageTone(form.stage)}>{stageLabel(form.stage)}</Badge>
+          <span className="status-readonly-note">{form.stage==='signed'?'Updated automatically when the deal is signed.':'Updated automatically from the consultation booking.'}</span>
+         </div>
+       : <select value={form.stage||'new'} onChange={e=>setForm({...form,stage:e.target.value,lost_reason:e.target.value==='lost'?form.lost_reason:'',follow_up_date:e.target.value==='lost'?'':form.follow_up_date})}>
+          {manualStages.map(v=><option key={v} value={v}>{stageLabel(v)}</option>)}
+         </select>}
+     </Field>
+     <Field label="Follow up on" hint="Optional. Only set this when you really need to chase the lead.">
+      <input type="date" value={form.follow_up_date||''} disabled={['signed','lost'].includes(form.stage)} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/>
+     </Field>
+    </div>
+   </div>
 
    <Field label="WhatsApp / display name" hint="Usually the first identity you know from WhatsApp or ads."><div className="input-icon"><AtSign size={17}/><input value={form.whatsapp_name||''} onChange={e=>setForm({...form,whatsapp_name:e.target.value})} placeholder="e.g. Jason"/></div></Field>
    <Field label="Real name (optional)"><input value={form.name||''} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Fill later if unknown"/></Field>
@@ -133,7 +154,43 @@ export default function Leads({onBookConsultation}){
    <Field label="Lead notes"><textarea value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Anything important about this lead"/></Field>
    {form.stage==='lost'&&<Field label="Lost reason"><select value={form.lost_reason||''} onChange={e=>setForm({...form,lost_reason:e.target.value})}><option value="">Select reason</option>{['Price','Not ready','Competitor','Distance','Not suitable','No reply','Other'].map(x=><option key={x}>{x}</option>)}</select></Field>}
 
-   {editing&&!['signed','lost'].includes(form.stage)&&<div className="lead-followup-box span-2"><div className="section-head mini"><div><span className="eyebrow">UPDATES</span><h3>Add note / next follow-up</h3><small className="section-helper">No extra sales status. Just record what matters and when to follow up.</small></div>{form.last_contacted_at&&<span className="last-contact">Last update {dateTime(form.last_contacted_at)}</span>}</div><div className="followup-grid"><Field label="Update note"><textarea value={update.note} onChange={e=>setUpdate({...update,note:e.target.value})} placeholder="e.g. Asked about price, wants to discuss with wife..."/></Field><Field label="Next follow-up" hint="Optional"><input type="date" value={update.next_follow_up_date} onChange={e=>setUpdate({...update,next_follow_up_date:e.target.value})}/></Field></div><div className="followup-actions"><button type="button" className="btn btn-ghost" disabled={updateBusy} onClick={saveUpdate}><Save size={16}/>{updateBusy?'Saving...':'Save update'}</button><button type="button" className="btn btn-service" onClick={()=>{setOpen(false);onBookConsultation?.(current||form)}}><CalendarPlus size={16}/>Book consultation</button></div>{history.length>0&&<div className="followup-history"><div className="followup-history-title"><History size={15}/><strong>Update history</strong></div>{history.map(h=><div className="followup-history-row" key={h.id}><div><strong>{h.note||'Follow-up updated'}</strong><span>{dateTime(h.contacted_at)} · {h.profiles?.full_name||'Admin'}</span></div>{h.next_follow_up_date&&<div className="history-meta"><small>Next: {shortDate(h.next_follow_up_date)}</small></div>}</div>)}</div>}</div>}
+   {editing&&!['signed','lost'].includes(form.stage)&&<div className="lead-followup-box span-2">
+    <div className="section-head mini">
+     <div>
+      <span className="eyebrow">UPDATES</span>
+      <h3>Add note / next follow-up</h3>
+      <small className="section-helper">Record what matters, then choose when you want to follow up again.</small>
+     </div>
+     {form.last_contacted_at&&<span className="last-contact">Last update {dateTime(form.last_contacted_at)}</span>}
+    </div>
+
+    <div className="followup-grid">
+     <Field label="Update note">
+      <textarea value={update.note} onChange={e=>setUpdate({...update,note:e.target.value})} placeholder="e.g. Asked about price, wants to discuss with wife..."/>
+     </Field>
+     <Field label="Next follow-up" hint="Optional">
+      <input type="date" value={update.next_follow_up_date} onChange={e=>setUpdate({...update,next_follow_up_date:e.target.value})}/>
+     </Field>
+    </div>
+
+    <div className="followup-actions">
+     <button type="button" className="btn btn-ghost" disabled={updateBusy} onClick={saveUpdate}><Save size={16}/>{updateBusy?'Saving...':'Save update'}</button>
+     <button type="button" className="btn btn-service" onClick={()=>{setOpen(false);onBookConsultation?.(current||form)}}><CalendarPlus size={16}/>Book consultation</button>
+    </div>
+
+    {history.length>0&&<div className="followup-history">
+     <div className="followup-history-title"><History size={15}/><strong>Update history</strong></div>
+     <div className="lead-history-list">
+      {history.map(h=><div className="lead-history-item" key={h.id}>
+       <div className="lead-history-note">{h.note||'Follow-up updated'}</div>
+       <div className="lead-history-meta">
+        <span>{dateTime(h.contacted_at)} · {h.profiles?.full_name||'Admin'}</span>
+        {h.next_follow_up_date&&<span className="lead-history-next">Next follow-up: {shortDate(h.next_follow_up_date)}</span>}
+       </div>
+      </div>)}
+     </div>
+    </div>}
+   </div>}
 
    <div className="form-actions lead-form-actions">{editing&&<button type="button" className="btn btn-danger-ghost" disabled={busy} onClick={remove}><Trash2 size={16}/>Delete</button>}<span className="grow"/><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Close</button><button disabled={busy} className="btn btn-primary"><Save size={16}/>{busy?'Saving...':'Save lead'}</button></div>
   </form></Drawer>

@@ -571,3 +571,34 @@ body{overflow-x:hidden}
   .login-switch button{min-height:40px}
   .portal-live-bar{padding-left:12px;padding-right:12px}
 }
+
+
+/* V2.5.1 — dedicated customer portal entry */
+.customer-auth-shell{
+  min-height:100dvh;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:
+    radial-gradient(circle at top left,rgba(151,124,92,.10),transparent 34%),
+    linear-gradient(180deg,#f7f5f0 0%,#efede7 100%);
+}
+.customer-auth-card{
+  width:min(100%,430px);
+  display:grid;
+  gap:14px;
+  padding:28px;
+  border:1px solid rgba(218,214,204,.95);
+  border-radius:22px;
+  background:rgba(255,254,250,.96);
+  box-shadow:0 22px 60px rgba(37,34,28,.12);
+}
+.customer-auth-card h1{font-size:30px;line-height:1.05}
+.customer-auth-card>p{color:var(--muted);font-size:12px;line-height:1.6}
+.customer-auth-card .btn-lg{width:100%}
+
+@media(max-width:560px){
+  .customer-auth-shell{padding:14px;align-items:center}
+  .customer-auth-card{padding:22px 18px;border-radius:19px}
+  .customer-auth-card h1{font-size:27px}
+}

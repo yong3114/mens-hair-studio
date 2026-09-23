@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react'
 import { supabase, configured } from './lib/supabase'
-import { getProfileMaybe, getMyCustomerPortal } from './lib/api'
+import { getProfileMaybe } from './lib/api'
 import { isConsultationType } from './lib/calendar'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -21,7 +21,7 @@ import Settings from './pages/Settings'
 const initialHistoryState={hairStudio:true,page:'dashboard',customerId:null,portalCustomerId:null}
 
 export default function App(){
- const[session,setSession]=useState(null),[profile,setProfile]=useState(null),[customerPortal,setCustomerPortal]=useState(null),[profileError,setProfileError]=useState(''),[loading,setLoading]=useState(true)
+ const[session,setSession]=useState(null),[profile,setProfile]=useState(null),[profileError,setProfileError]=useState(''),[loading,setLoading]=useState(true)
  const[page,setPage]=useState(()=>window.history.state?.hairStudio?window.history.state.page:'dashboard')
  const[customerId,setCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.customerId:null)
  const[portalCustomerId,setPortalCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.portalCustomerId:null)
@@ -29,14 +29,13 @@ export default function App(){
  const authUserRef=useRef(null)
 
  useEffect(()=>{if(!configured){setLoading(false);return} supabase.auth.getSession().then(({data})=>{authUserRef.current=data.session?.user?.id||null;setSession(data.session);setLoading(false)});const{data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{const previousUser=authUserRef.current;const nextUser=nextSession?.user?.id||null;setSession(nextSession);if(event==='SIGNED_IN'&&nextUser&&!previousUser){window.history.replaceState(initialHistoryState,'');setPage('dashboard');setCustomerId(null);setPortalCustomerId(null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}authUserRef.current=nextUser});return()=>subscription.unsubscribe()},[])
- useEffect(()=>{let active=true;if(session?.user?.id){setProfile(null);setCustomerPortal(null);setProfileError('');(async()=>{try{const p=await getProfileMaybe(session.user.id);if(p){if(!p.active)throw new Error('This staff account is inactive.');if(active)setProfile(p);return}const portal=await getMyCustomerPortal();if(active)setCustomerPortal(portal)}catch(e){if(active){setProfile(null);setCustomerPortal(null);setProfileError(e.message||'Could not verify account access.')}}})()}else{setProfile(null);setCustomerPortal(null);setProfileError('')}return()=>{active=false}},[session?.user?.id])
+ useEffect(()=>{let active=true;if(session?.user?.id){setProfile(null);setProfileError('');getProfileMaybe(session.user.id).then(p=>{if(!p)throw new Error('This is the staff system. Customer accounts must use the Customer Portal link.');if(!p.active)throw new Error('This staff account is inactive.');if(active)setProfile(p)}).catch(e=>{if(active){setProfile(null);setProfileError(e.message||'Could not verify staff access.')}})}else{setProfile(null);setProfileError('')}return()=>{active=false}},[session?.user?.id])
  useEffect(()=>{if(!window.history.state?.hairStudio)window.history.replaceState(initialHistoryState,'');const onPop=e=>{const s=e.state?.hairStudio?e.state:initialHistoryState;setPage(s.page||'dashboard');setCustomerId(s.customerId||null);setPortalCustomerId(s.portalCustomerId||null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[])
  useEffect(()=>{requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},[page,customerId,portalCustomerId])
 
  if(loading)return <div className="app-loading">Loading...</div>
  if(!session)return <Login/>
- if(customerPortal)return <CustomerPortalPreview live customerData={customerPortal} onLogout={()=>supabase.auth.signOut()}/>
- if(!profile){if(profileError)return <div className="app-loading"><div><strong>Account access unavailable</strong><p>{profileError}</p><button className="btn btn-ghost" onClick={()=>supabase.auth.signOut()}>Sign out</button></div></div>;return <div className="app-loading">Checking account access...</div>}
+ if(!profile){if(profileError)return <div className="app-loading"><div><strong>Staff access unavailable</strong><p>{profileError}</p><button className="btn btn-ghost" onClick={()=>supabase.auth.signOut()}>Sign out</button></div></div>;return <div className="app-loading">Checking staff access...</div>}
 
  const navigate=(nextPage,{customer=null,portal=null,replace=false}={})=>{const next={hairStudio:true,page:nextPage,customerId:customer,portalCustomerId:portal};const same=page===nextPage&&customerId===customer&&portalCustomerId===portal;if(same){window.scrollTo({top:0,left:0,behavior:'smooth'});return}if(replace)window.history.replaceState(next,'');else window.history.pushState(next,'');setPage(nextPage);setCustomerId(customer);setPortalCustomerId(portal);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null)}
  const go=p=>navigate(p)

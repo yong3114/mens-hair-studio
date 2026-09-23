@@ -4,6 +4,18 @@ import { collectPaged } from './paging'
 const ok = (r) => { if (r.error) throw r.error; return r.data }
 
 export async function getProfile(userId) { return ok(await supabase.from('profiles').select('*').eq('id', userId).single()) }
+export async function getProfileMaybe(userId) {
+  const r=await supabase.from('profiles').select('*').eq('id',userId).maybeSingle()
+  if(r.error)throw r.error
+  return r.data
+}
+export async function getMyCustomerPortal(){
+  const claim=await supabase.rpc('claim_customer_portal_access')
+  if(claim.error)throw claim.error
+  const portal=await supabase.rpc('get_my_customer_portal')
+  if(portal.error)throw portal.error
+  return portal.data
+}
 
 export async function getDashboard(userId=null) {
   const start = new Date(); start.setHours(0,0,0,0)

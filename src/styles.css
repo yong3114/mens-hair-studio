@@ -448,3 +448,79 @@ body{overflow-x:hidden}
 @media(max-width:820px){
   .lead-progress-fields.single-status{max-width:none}
 }
+
+
+/* V2.3.8 — mobile workflow and calendar usability */
+.optional-section{border:1px solid var(--line);border-radius:13px;background:#faf9f6;padding:9px 11px}
+.optional-toggle{width:100%;border:0;background:transparent;padding:2px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ink);font-weight:760;font-size:12px;text-align:left}
+.optional-toggle svg{transition:transform .18s ease;color:var(--muted)}
+.optional-toggle svg.open{transform:rotate(180deg)}
+.optional-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.mobile-week-calendar{display:none}
+
+@media(max-width:820px){
+  .page{padding-bottom:26px}
+  .page-stage{min-height:calc(100dvh - 132px)}
+  .mobile-more{max-height:calc(100dvh - 18px - env(safe-area-inset-top));overflow:hidden;padding:10px 12px calc(12px + env(safe-area-inset-bottom))}
+  .mobile-more::before{margin-bottom:9px}
+  .mobile-more-head{margin-bottom:8px}
+  .mobile-more-head h2{font-size:18px}
+  .mobile-more-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .mobile-more-grid button{min-height:48px!important;padding:9px 10px!important;font-size:12px;line-height:1.2}
+  .mobile-more-grid button svg{width:18px;height:18px;flex:0 0 auto}
+  .mobile-signout{min-height:44px;margin-top:8px}
+
+  .schedule-row{display:grid;grid-template-columns:58px minmax(0,1fr) auto;align-items:start;gap:7px 9px;padding:12px 7px}
+  .schedule-row .time-block{grid-row:1/3;align-self:center;min-width:0;font-size:12px}
+  .schedule-row>.grow{min-width:0}
+  .schedule-row>.grow strong{font-size:13px;line-height:1.3}
+  .schedule-row>.grow span{font-size:11px;line-height:1.35}
+  .schedule-row>.badge{grid-column:2;justify-self:start;margin:0}
+  .schedule-row>.btn{grid-column:3;grid-row:1/3;align-self:center;min-width:88px;padding:0 10px}
+
+  .calendar-commandbar{gap:7px}
+  .calendar-commandbar .tabs{order:1}
+  .calendar-nav{order:2}
+  .calendar-filters{order:3}
+  .calendar-commandbar .tabs button{padding:7px 10px}
+
+  .mobile-week-calendar{display:grid;gap:11px}
+  .mobile-week-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px}
+  .mobile-week-strip button{position:relative;min-width:0;min-height:58px;border:0;background:transparent;border-radius:12px;display:grid;place-items:center;align-content:center;gap:1px;color:var(--muted);padding:4px 1px}
+  .mobile-week-strip button span{font-size:9px;font-weight:800;text-transform:uppercase}
+  .mobile-week-strip button strong{font-size:15px;color:var(--ink)}
+  .mobile-week-strip button small{position:absolute;right:4px;top:4px;min-width:15px;height:15px;border-radius:99px;display:grid;place-items:center;background:#efeee9;color:#6c6c66;font-size:8px;font-weight:850}
+  .mobile-week-strip button.today strong{color:var(--green)}
+  .mobile-week-strip button.selected{background:var(--ink);color:#d7d9d4}
+  .mobile-week-strip button.selected strong{color:#fff}
+  .mobile-week-strip button.selected small{background:#fff;color:var(--ink)}
+  .mobile-week-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 2px}
+  .mobile-week-heading .eyebrow{margin-bottom:3px}
+  .mobile-week-heading h2{font-size:18px}
+  .mobile-week-events{display:grid;gap:8px}
+  .mobile-week-event{width:100%;border:1px solid var(--line);background:#fff;border-radius:15px;padding:11px;display:grid;grid-template-columns:58px minmax(0,1fr) auto auto;align-items:center;gap:8px;text-align:left;box-shadow:var(--shadow-xs)}
+  .mobile-week-event.status-in_progress{border-color:#c9ddcf;background:#f7fbf8}
+  .mobile-week-event.status-cancelled,.mobile-week-event.status-no-show{opacity:.55}
+  .mobile-week-time{font-size:12px;font-weight:850}
+  .mobile-week-copy{min-width:0;display:grid}
+  .mobile-week-copy strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mobile-week-copy span{font-size:11px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mobile-week-copy small{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mobile-week-event>svg{color:#aaa}
+  .mobile-week-empty{padding:12px}
+  .timegrid.week-mode{display:none}
+
+  .optional-grid{grid-template-columns:1fr}
+  .optional-section{padding:10px}
+}
+
+@media(max-width:390px){
+  .schedule-row{grid-template-columns:52px minmax(0,1fr)}
+  .schedule-row>.btn{grid-column:1/-1;grid-row:auto;width:100%;margin-top:2px}
+  .schedule-row>.badge{grid-column:2}
+  .mobile-week-strip{gap:2px;padding:5px}
+  .mobile-week-strip button{min-height:54px}
+  .mobile-week-event{grid-template-columns:52px minmax(0,1fr) auto}
+  .mobile-week-event>.badge{grid-column:2;justify-self:start}
+  .mobile-week-event>svg{grid-column:3;grid-row:1/3}
+}

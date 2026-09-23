@@ -128,20 +128,20 @@ export default function Leads({onBookConsultation}){
      <h3>Where is this lead now?</h3>
      <p>Keep one simple status. Booking and signing update it automatically.</p>
     </div>
-    <div className="lead-progress-fields">
+    <div className={`lead-progress-fields ${['signed','lost'].includes(form.stage)?'single-status':''}`}>
      <Field label="Status">
       {systemManaged
        ? <div className="status-readonly">
-          <Badge tone={stageTone(form.stage)}>{stageLabel(form.stage)}</Badge>
-          <span className="status-readonly-note">{form.stage==='signed'?'Updated automatically when the deal is signed.':'Updated automatically from the consultation booking.'}</span>
+          <div className="status-readonly-row"><Badge tone={stageTone(form.stage)}>{stageLabel(form.stage)}</Badge></div>
+          <span className="status-readonly-note">{form.stage==='signed'?'This lead is signed. No further sales follow-up is needed.':'Updated automatically from the consultation booking.'}</span>
          </div>
        : <select value={form.stage||'new'} onChange={e=>setForm({...form,stage:e.target.value,lost_reason:e.target.value==='lost'?form.lost_reason:'',follow_up_date:e.target.value==='lost'?'':form.follow_up_date})}>
           {manualStages.map(v=><option key={v} value={v}>{stageLabel(v)}</option>)}
          </select>}
      </Field>
-     <Field label="Follow up on" hint="Optional. Only set this when you really need to chase the lead.">
-      <input type="date" value={form.follow_up_date||''} disabled={['signed','lost'].includes(form.stage)} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/>
-     </Field>
+     {!['signed','lost'].includes(form.stage)&&<Field label="Follow up on" hint="Optional. Only set this when you really need to chase the lead.">
+      <input type="date" value={form.follow_up_date||''} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/>
+     </Field>}
     </div>
    </div>
 

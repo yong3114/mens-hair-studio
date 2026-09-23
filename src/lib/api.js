@@ -75,6 +75,22 @@ export async function listAppointments(start,end){
   return ok(await q)
 }
 export async function saveAppointment(payload,id){ return ok(id ? await supabase.from('appointments').update(payload).eq('id',id).select().single() : await supabase.from('appointments').insert(payload).select().single()) }
+export async function findWorkflowConflict({leadId=null,customerId=null,serviceType='',excludeAppointmentId=null}={}){
+  const consultation=String(serviceType).includes('Consultation')
+  let q=supabase.from('appointments').select('id,lead_id,customer_id,service_type,status,scheduled_at').order('scheduled_at',{ascending:true})
+  if(consultation){
+    q=q.in('status',['tentative','confirmed','in_progress']).ilike('service_type','%Consultation%')
+    if(leadId)q=q.eq('lead_id',leadId)
+    else if(customerId)q=q.eq('customer_id',customerId)
+    else return null
+  }else{
+    if(!customerId)return null
+    q=q.eq('customer_id',customerId).eq('status','in_progress').not('service_type','ilike','%Consultation%')
+  }
+  if(excludeAppointmentId)q=q.neq('id',excludeAppointmentId)
+  const rows=ok(await q.limit(1))
+  return rows?.[0]||null
+}
 export async function resetAppointmentWorkflow(appointmentId,targetStatus='confirmed'){ const {data,error}=await supabase.rpc('reset_appointment_workflow',{p_appointment_id:appointmentId,p_target_status:targetStatus}); if(error)throw error; return data }
 export async function deleteAppointment(id){
   // Only use for bookings that have not progressed into a completed technical record.

@@ -5,6 +5,7 @@ import { localDateKey, money, personLabel, timeOnly } from '../lib/utils'
 import { isConsultationType } from '../lib/calendar'
 import { Badge, Empty, Stat } from '../components/UI'
 import { accountOutstanding } from '../lib/finance'
+import { collapseConsultationJobs } from '../lib/guards'
 
 export default function Dashboard({go,profile,onStartService,onStartConsultation}){
  const [d,setD]=useState(null),[err,setErr]=useState('')
@@ -13,7 +14,7 @@ export default function Dashboard({go,profile,onStartService,onStartConsultation
   if(!d)return null
   const today=localDateKey(new Date())
   const todayAppts=d.appts.filter(x=>localDateKey(x.scheduled_at)===today&&!['cancelled','no-show'].includes(x.status))
-  const myJobs=d.appts.filter(x=>x.assigned_user_id===profile?.id&&!['completed','cancelled','no-show'].includes(x.status)).slice(0,8)
+  const myJobs=collapseConsultationJobs(d.appts.filter(x=>x.assigned_user_id===profile?.id&&!['completed','cancelled','no-show'].includes(x.status))).slice(0,8)
   const openLeads=d.leads.filter(x=>!['signed','customer','lost'].includes(x.stage))
   const followups=openLeads.filter(x=>x.follow_up_date&&x.follow_up_date<=today)
   const low=d.consumables.filter(x=>Number(x.qty)<=Number(x.min_qty))

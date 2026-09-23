@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { collectPaged } from '../src/lib/paging.js'
 import { nextCalendarCursor } from '../src/lib/calendar.js'
 import { customerLabel, leadLabel, personLabel } from '../src/lib/utils.js'
-import { canDirectInstallHairSystem, canMoveAppointment } from '../src/lib/guards.js'
+import { canDirectInstallHairSystem, canMoveAppointment, collapseConsultationJobs } from '../src/lib/guards.js'
 import { accountOutstanding } from '../src/lib/finance.js'
 
 test('backup pagination exports more than one database page',async()=>{
@@ -53,4 +53,17 @@ test('account outstanding does not double count deal-linked outstanding payments
     {status:'outstanding',type:'sale',amount:25,payment_allocations:[]}
   ]
   assert.equal(accountOutstanding(deals,payments),105)
+})
+
+
+test('dashboard collapses duplicate active consultations for the same person',()=>{
+  const rows=[
+    {id:'future',lead_id:'lead-1',service_type:'Studio Consultation',status:'confirmed',scheduled_at:'2026-09-27T02:00:00.000Z'},
+    {id:'live',lead_id:'lead-1',service_type:'Studio Consultation',status:'in_progress',scheduled_at:'2026-09-23T02:00:00.000Z'},
+    {id:'service',customer_id:'customer-1',service_type:'Maintenance',status:'confirmed',scheduled_at:'2026-09-28T02:00:00.000Z'}
+  ]
+  const result=collapseConsultationJobs(rows)
+  assert.equal(result.some(x=>x.id==='live'),true)
+  assert.equal(result.some(x=>x.id==='future'),false)
+  assert.equal(result.some(x=>x.id==='service'),true)
 })

@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react'
+import React,{useEffect,useRef,useState} from 'react'
 import { supabase, configured } from './lib/supabase'
 import { getProfile } from './lib/api'
 import { isConsultationType } from './lib/calendar'
@@ -26,8 +26,9 @@ export default function App(){
  const[customerId,setCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.customerId:null)
  const[portalCustomerId,setPortalCustomerId]=useState(()=>window.history.state?.hairStudio?window.history.state.portalCustomerId:null)
  const[appointmentPrefill,setAppointmentPrefill]=useState(null),[servicePrefill,setServicePrefill]=useState(null),[salesPrefill,setSalesPrefill]=useState(null),[mediaPrefill,setMediaPrefill]=useState(null)
+ const authUserRef=useRef(null)
 
- useEffect(()=>{if(!configured){setLoading(false);return} supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[])
+ useEffect(()=>{if(!configured){setLoading(false);return} supabase.auth.getSession().then(({data})=>{authUserRef.current=data.session?.user?.id||null;setSession(data.session);setLoading(false)});const{data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{const previousUser=authUserRef.current;const nextUser=nextSession?.user?.id||null;setSession(nextSession);if(event==='SIGNED_IN'&&nextUser&&!previousUser){window.history.replaceState(initialHistoryState,'');setPage('dashboard');setCustomerId(null);setPortalCustomerId(null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}authUserRef.current=nextUser});return()=>subscription.unsubscribe()},[])
  useEffect(()=>{let active=true;if(session?.user?.id){setProfile(null);setProfileError('');getProfile(session.user.id).then(p=>{if(!p?.active)throw new Error('This staff account is inactive.');if(active)setProfile(p)}).catch(e=>{if(active){setProfile(null);setProfileError(e.message||'Could not verify staff access.')}})}else{setProfile(null);setProfileError('')}return()=>{active=false}},[session?.user?.id])
  useEffect(()=>{if(!window.history.state?.hairStudio)window.history.replaceState(initialHistoryState,'');const onPop=e=>{const s=e.state?.hairStudio?e.state:initialHistoryState;setPage(s.page||'dashboard');setCustomerId(s.customerId||null);setPortalCustomerId(s.portalCustomerId||null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[])
  useEffect(()=>{requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},[page,customerId,portalCustomerId])
@@ -49,9 +50,9 @@ export default function App(){
  if(page==='dashboard')content=<Dashboard go={go} profile={profile} onStartService={openAppointment} onStartConsultation={openAppointment}/>
  else if(page==='leads')content=<Leads onBookConsultation={lead=>bookFor(lead,'lead','Studio Consultation')}/>
  else if(page==='customers')content=customerId?<CustomerDetail id={customerId} onBack={()=>window.history.back()} onBook={(c,type)=>bookFor(c,'customer',type)} onService={x=>{navigate('services');setServicePrefill(x)}} onAppointmentAction={openAppointment} onPreviewPortal={()=>previewCustomer(customerId)} onDeleted={()=>navigate('customers',{replace:true})}/>:<Customers onOpen={viewCustomer}/>
- else if(page==='appointments')content=<Appointments prefill={appointmentPrefill} onStartService={openAppointment} onStartConsultation={openAppointment}/>
+ else if(page==='appointments')content=<Appointments prefill={appointmentPrefill} onPrefillDone={()=>setAppointmentPrefill(null)} onCancelPrefill={()=>window.history.back()} onStartService={openAppointment} onStartConsultation={openAppointment}/>
  else if(page==='sales')content=<Sales prefill={salesPrefill} onDone={()=>setSalesPrefill(null)} onViewCustomer={viewCustomer} onBookInstallation={c=>bookFor(c,'customer','New System Installation')} onStartInstallation={c=>{navigate('services');setServicePrefill({customer:c,service_type:'New System Installation',immediate:true})}}/>
- else if(page==='services')content=<Services prefill={servicePrefill} onDone={()=>setServicePrefill(null)} onViewCustomer={viewCustomer} onBook={(c,type)=>bookFor(c,'customer',type)} onAddMedia={x=>{navigate('media');setMediaPrefill(x)}}/>
+ else if(page==='services')content=<Services prefill={servicePrefill} onDone={()=>setServicePrefill(null)} onCancelPrefill={()=>window.history.back()} onViewCustomer={viewCustomer} onBook={(c,type)=>bookFor(c,'customer',type)} onAddMedia={x=>{navigate('media');setMediaPrefill(x)}}/>
  else if(page==='inventory')content=<Inventory/>
  else if(page==='payments')content=<Payments/>
  else if(page==='media')content=<Media prefill={mediaPrefill}/>

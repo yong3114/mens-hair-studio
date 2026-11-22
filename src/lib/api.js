@@ -90,7 +90,24 @@ export async function listServices(limit=300){ return ok(await supabase.from('se
 export async function startService(payload){ const {data,error}=await supabase.rpc('start_service',{p_customer_id:payload.customer_id,p_appointment_id:payload.appointment_id||null,p_service_type:payload.service_type,p_technician_id:payload.technician_id||null,p_started_at:payload.started_at||new Date().toISOString()}); if(error)throw error; return data }
 export async function completeService(payload,consumptions=[]){ const { data, error } = await supabase.rpc('complete_service', { p_payload: payload, p_consumptions: consumptions }); if(error) throw error; return data }
 
-export async function listHairSystems(){ return ok(await supabase.from('hair_systems').select('*,customers(name,whatsapp_name)').order('created_at',{ascending:false})) }
+export async function listHairSystems() {
+  const items = []
+  let cursor = null
+  while (true) {
+    let query = supabase.from('hair_systems').select('*,customers(name,whatsapp_name)').order('id').limit(500)
+    if (cursor) query = query.gt('id', cursor)
+    const page = ok(await query)
+    if (!page.length) break
+    items.push(...page)
+    cursor = page[page.length - 1].id
+  }
+  return items.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.code.localeCompare(a.code))
+}
+
+export async function receiveHairSystems(payload, ids) {
+  const rows = ids.map(id => ({ ...payload, id }))
+  ok(await supabase.from('hair_systems').upsert(rows, { onConflict: 'id', ignoreDuplicates: true }))
+}
 export async function saveHairSystem(payload,id){ return ok(id ? await supabase.from('hair_systems').update(payload).eq('id',id).select().single() : await supabase.from('hair_systems').insert(payload).select().single()) }
 export async function installHairSystem(systemId,customerId,serviceId=null){ const {data,error}=await supabase.rpc('install_hair_system',{p_system_id:systemId,p_customer_id:customerId,p_service_id:serviceId}); if(error)throw error; return data }
 export async function listConsumables(){ return ok(await supabase.from('consumables').select('*').order('name')) }

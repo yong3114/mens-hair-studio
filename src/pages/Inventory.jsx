@@ -80,9 +80,10 @@ export default function Inventory(){
  const [availableOnly,setAvailableOnly] = useState(false)
  const search = normalise(q)
  const choices = useMemo(() => Object.fromEntries(specKeys.map(key => [key,specValues(systems,key)])),[systems])
- const groups = useMemo(() => {
+ const visibleGroups = useMemo(() => {
    const bySku = new Map()
    for (const unit of systems) {
+     if (!matchesUnit(unit,search,filters,availableOnly)) continue
      const key = unit.sku?.trim() ? 'sku:' + unit.sku.trim().toLowerCase() : 'unit:' + unit.id
      if (!bySku.has(key)) bySku.set(key,{key,units:[],counts:{}})
      const group = bySku.get(key)
@@ -90,10 +91,7 @@ export default function Inventory(){
      group.counts[unit.status] = (group.counts[unit.status] || 0) + 1
    }
    return [...bySku.values()]
- }, [systems])
- const visibleGroups = useMemo(() => groups.filter(group =>
-   group.units.some(unit => matchesUnit(unit,search,filters,availableOnly))
- ),[groups,search,filters,availableOnly])
+ }, [systems,search,filters,availableOnly])
  const fc=useMemo(()=>cons.filter(x=>`${x.name} ${x.sku} ${x.category}`.toLowerCase().includes(q.toLowerCase())),[cons,q])
  return <div className="page"><div className="page-head"><div><span className="eyebrow">STOCK</span><h1>Inventory</h1><p>Simple stock control: available, reserved, installed and low-stock consumables.</p></div><button className="btn btn-primary" onClick={()=>tab==='systems'?openReceipt():setConOpen(true)}><Plus size={17}/>Add {tab==='systems'?'hair system':'consumable'}</button></div>
  <div className="inventory-top"><Tabs value={tab} onChange={setTab} items={[{value:'systems',label:'Hair Systems'},{value:'consumables',label:'Consumables'}]}/><div className="search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} aria-label="Search inventory" placeholder={tab === 'systems' ? 'Search SKU or unit code…' : 'Search consumables…'}/></div></div>
@@ -102,17 +100,18 @@ export default function Inventory(){
      <option value="">All</option>
      {choices[key].map(value => <option key={value} value={normalise(value)}>{value}</option>)}
    </select></label>)}
-   <label><input type="checkbox" checked={availableOnly} onChange={e => setAvailableOnly(e.target.checked)}/> Available only</label>
+   <label style={{display:'inline-flex',alignItems:'center',gap:8,minHeight:44,cursor:'pointer'}}><input type="checkbox" style={{width:16,height:16,minHeight:16,minWidth:16,margin:0,padding:0,flex:'none'}} checked={availableOnly} onChange={e => setAvailableOnly(e.target.checked)}/> Available only</label>
    {(q || availableOnly || Object.values(filters).some(Boolean)) && <button className="btn btn-ghost btn-sm" onClick={() => {setQ('');setFilters({});setAvailableOnly(false)}}>Clear filters</button>}
  </div>}
  {tab === 'systems' && <section className="panel table-panel">
    {visibleGroups.map(({ key, units, counts }) => {
-     const matched = search && units.find(unit => normalise(unit.code) === search && matchesUnit(unit,search,filters,availableOnly))
+     const matched = search && units.find(unit => normalise(unit.code) === search)
      return <details key={key + (matched ? ':' + matched.id : '')} open={matched ? true : undefined}>
      <summary style={{cursor:'pointer',padding:'1rem'}}>
        <strong>{units[0].sku || units[0].code}</strong>
        {specKeys.map(key => <span key={key}> · {specs[key]} {specValues(units,key).join(' / ') || '—'}</span>)}
-       <span> · Available {counts.available || 0} · Reserved {counts.reserved || 0} · Installed {counts.installed || 0}</span>
+       <span> · Available {counts.available || 0}</span>
+       {!availableOnly && <span> · Reserved {counts.reserved || 0} · Installed {counts.installed || 0}</span>}
        {counts.damaged > 0 && <span> · Damaged {counts.damaged}</span>}
        {counts.returned > 0 && <span> · Returned {counts.returned}</span>}
      </summary>

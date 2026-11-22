@@ -1,6 +1,6 @@
-import React,{useEffect,useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useRef,useState} from 'react'
 import { Plus, Search, Package, Droplets, ArrowUpDown } from 'lucide-react'
-import { listHairSystems, saveHairSystem, listConsumables, saveConsumable, adjustConsumable, listCustomers, installHairSystem } from '../lib/api'
+import { listHairSystems, receiveHairSystems, listConsumables, saveConsumable, adjustConsumable, listCustomers, installHairSystem } from '../lib/api'
 import { Badge, Empty, Field, Modal, Tabs } from '../components/UI'
 import { customerLabel, localDateKey, money, shortDate } from '../lib/utils'
 
@@ -9,6 +9,21 @@ const conBlank={name:'',sku:'',category:'Tape',unit:'roll',qty:'',min_qty:'',sup
 export default function Inventory(){
  const [tab,setTab]=useState('systems'),[systems,setSystems]=useState([]),[cons,setCons]=useState([]),[customers,setCustomers]=useState([]),[q,setQ]=useState(''),[hsOpen,setHsOpen]=useState(false),[conOpen,setConOpen]=useState(false),[adjust,setAdjust]=useState(null),[install,setInstall]=useState(null),[hsForm,setHsForm]=useState(hsBlank),[conForm,setConForm]=useState(conBlank)
  const load=async()=>{const [h,c,cu]=await Promise.all([listHairSystems(),listConsumables(),listCustomers()]);setSystems(h);setCons(c);setCustomers(cu)};useEffect(()=>{load()},[])
+ const [quantity,setQuantity] = useState('1')
+ const receipt = useRef(null)
+ function openReceipt(unit) {
+   const form = {...hsBlank, received_date:localDateKey(new Date())}
+   if (unit) {
+     for (const field of ['sku','base','colour','size','density','length','hair_type','supplier','cost','selling_price']) {
+       form[field] = unit[field] ?? form[field]
+     }
+   }
+   setHsForm(form)
+   setQuantity('1')
+   setStockError('')
+   receipt.current = null
+   setHsOpen(true)
+ }
  const [saving, setSaving] = useState(false)
  const [stockError, setStockError] = useState('')
  async function stockIn(event) {
@@ -17,13 +32,21 @@ export default function Inventory(){
    setSaving(true)
    setStockError('')
    try {
-     const item = await saveHairSystem({
+     const count = Number(quantity)
+     if (!Number.isSafeInteger(count) || count < 1) throw new Error('Enter a positive whole quantity.')
+     const payload = {
        ...hsForm,
+       sku:hsForm.sku.trim(),
        cost: Number(hsForm.cost || 0),
        selling_price: Number(hsForm.selling_price || 0),
        received_date: hsForm.received_date || null
-     })
-     setSystems(previous => [item, ...previous.filter(existing => existing.id !== item.id)])
+     }
+     const signature = JSON.stringify([payload,count])
+     if (receipt.current?.signature !== signature) {
+       receipt.current = {signature, ids:Array.from({length:count}, () => crypto.randomUUID())}
+     }
+     await receiveHairSystems(payload, receipt.current.ids)
+     await load()
      setQ('')
      setHsForm(hsBlank)
      setHsOpen(false)
@@ -33,12 +56,37 @@ export default function Inventory(){
      setSaving(false)
    }
  }
- const fs=useMemo(()=>systems.filter(x=>`${x.code} ${x.sku} ${x.base} ${x.colour} ${x.status}`.toLowerCase().includes(q.toLowerCase())),[systems,q]);const fc=useMemo(()=>cons.filter(x=>`${x.name} ${x.sku} ${x.category}`.toLowerCase().includes(q.toLowerCase())),[cons,q])
- return <div className="page"><div className="page-head"><div><span className="eyebrow">STOCK</span><h1>Inventory</h1><p>Simple stock control: available, reserved, installed and low-stock consumables.</p></div><button className="btn btn-primary" onClick={()=>tab==='systems'?setHsOpen(true):setConOpen(true)}><Plus size={17}/>Add {tab==='systems'?'hair system':'consumable'}</button></div>
+ const groups = useMemo(() => {
+   const bySku = new Map()
+   for (const unit of systems) {
+     const key = unit.sku?.trim() ? 'sku:' + unit.sku.trim().toLowerCase() : 'unit:' + unit.id
+     if (!bySku.has(key)) bySku.set(key,{key,units:[],counts:{}})
+     const group = bySku.get(key)
+     group.units.push(unit)
+     group.counts[unit.status] = (group.counts[unit.status] || 0) + 1
+   }
+   const search = q.trim().toLowerCase()
+   return [...bySku.values()].filter(group => group.units.some(unit =>
+     [unit.sku,unit.code,unit.base,unit.colour,unit.size,unit.status].join(' ').toLowerCase().includes(search)))
+ }, [systems,q])
+ const fc=useMemo(()=>cons.filter(x=>`${x.name} ${x.sku} ${x.category}`.toLowerCase().includes(q.toLowerCase())),[cons,q])
+ return <div className="page"><div className="page-head"><div><span className="eyebrow">STOCK</span><h1>Inventory</h1><p>Simple stock control: available, reserved, installed and low-stock consumables.</p></div><button className="btn btn-primary" onClick={()=>tab==='systems'?openReceipt():setConOpen(true)}><Plus size={17}/>Add {tab==='systems'?'hair system':'consumable'}</button></div>
  <div className="inventory-top"><Tabs value={tab} onChange={setTab} items={[{value:'systems',label:'Hair Systems'},{value:'consumables',label:'Consumables'}]}/><div className="search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search inventory..."/></div></div>
- {tab==='systems'&&<section className="panel table-panel">{fs.length?<div className="responsive-table"><table><thead><tr><th>System</th><th>Specs</th><th>Status</th><th>Customer</th><th>Cost / Sell</th><th></th></tr></thead><tbody>{fs.map(x=><tr key={x.id}><td data-label="System"><strong>{x.code}</strong><span>{x.sku||'No SKU'} · {x.supplier||'No supplier'}</span></td><td data-label="Specs">{[x.base,x.colour,x.size,x.density,x.length].filter(Boolean).join(' · ')}</td><td data-label="Status"><Badge tone={x.status==='available'?'success':x.status==='installed'?'neutral':x.status==='reserved'?'warn':'danger'}>{x.status}</Badge></td><td data-label="Customer">{x.customers?customerLabel(x.customers):'—'}</td><td data-label="Cost / Sell"><strong>{money(x.cost)}</strong><span>{money(x.selling_price)}</span></td><td className="row-actions">{x.status!=='installed'&&<button className="btn btn-ghost btn-sm" onClick={()=>setInstall(x)}>Assign / Install</button>}</td></tr>)}</tbody></table></div>:<Empty title="No hair systems" text="Stock in each physical unit with its own unique code."/>}</section>}
+ {tab === 'systems' && <section className="panel table-panel">
+   {groups.map(({ key, units, counts }) => <details key={key}>
+     <summary style={{cursor:'pointer',padding:'1rem'}}>
+       <strong>{units[0].sku || units[0].code}</strong>
+       <span> · Available {counts.available || 0} · Reserved {counts.reserved || 0} · Installed {counts.installed || 0}</span>
+       {counts.damaged > 0 && <span> · Damaged {counts.damaged}</span>}
+       {counts.returned > 0 && <span> · Returned {counts.returned}</span>}
+     </summary>
+     <button className="btn btn-ghost btn-sm" onClick={() => openReceipt(units[0])}>Stock in same SKU</button>
+     <div className="responsive-table"><table><thead><tr><th>System</th><th>Specs</th><th>Status</th><th>Customer</th><th>Cost / Sell</th><th></th></tr></thead><tbody>{units.map(x=><tr key={x.id}><td data-label="System"><strong>{x.code}</strong><span>{x.sku||'No SKU'} · {x.supplier||'No supplier'}</span></td><td data-label="Specs">{[x.base,x.colour,x.size,x.density,x.length].filter(Boolean).join(' · ')}</td><td data-label="Status"><Badge tone={x.status==='available'?'success':x.status==='installed'?'neutral':x.status==='reserved'?'warn':'danger'}>{x.status}</Badge></td><td data-label="Customer">{x.customers?customerLabel(x.customers):'—'}</td><td data-label="Cost / Sell"><strong>{money(x.cost)}</strong><span>{money(x.selling_price)}</span></td><td className="row-actions">{x.status==='available'&&<button className="btn btn-ghost btn-sm" onClick={()=>setInstall(x)}>Assign / Install</button>}</td></tr>)}</tbody></table></div>
+   </details>)}
+   {!groups.length && <Empty title={q ? 'No matching hair systems' : 'No hair systems'} text="Add stock or search by SKU or unit code."/>}
+ </section>
  {tab==='consumables'&&<section className="panel table-panel">{fc.length?<div className="responsive-table"><table><thead><tr><th>Consumable</th><th>Category</th><th>On hand</th><th>Minimum</th><th>Supplier</th><th></th></tr></thead><tbody>{fc.map(x=>{const low=Number(x.qty)<=Number(x.min_qty);return <tr key={x.id}><td data-label="Consumable"><strong>{x.name}</strong><span>{x.sku||'No SKU'}</span></td><td data-label="Category">{x.category}</td><td data-label="On hand"><strong className={low?'text-danger':''}>{x.qty} {x.unit}</strong>{low&&<Badge tone="danger">Low</Badge>}</td><td data-label="Minimum">{x.min_qty} {x.unit}</td><td data-label="Supplier">{x.supplier||'—'}</td><td className="row-actions"><button className="btn btn-ghost btn-sm" onClick={()=>setAdjust(x)}><ArrowUpDown size={15}/>Adjust</button></td></tr>})}</tbody></table></div>:<Empty title="No consumables" text="Add tapes, glue, remover, shampoo and other service stock."/>}</section>}
- <Modal open={hsOpen} onClose={()=>{if(!saving){setHsOpen(false);setStockError('')}}} title="Stock in hair system" wide><form className="form-grid" onSubmit={stockIn}><Field label="SKU"><input value={hsForm.sku} onChange={e=>setHsForm({...hsForm,sku:e.target.value})}/></Field><Field label="Base"><input value={hsForm.base} onChange={e=>setHsForm({...hsForm,base:e.target.value})} placeholder="0.06 Poly / Lace..."/></Field><Field label="Colour"><input value={hsForm.colour} onChange={e=>setHsForm({...hsForm,colour:e.target.value})}/></Field><Field label="Size"><input value={hsForm.size} onChange={e=>setHsForm({...hsForm,size:e.target.value})}/></Field><Field label="Density"><input value={hsForm.density} onChange={e=>setHsForm({...hsForm,density:e.target.value})}/></Field><Field label="Length"><input value={hsForm.length} onChange={e=>setHsForm({...hsForm,length:e.target.value})}/></Field><Field label="Hair type"><input value={hsForm.hair_type} onChange={e=>setHsForm({...hsForm,hair_type:e.target.value})}/></Field><Field label="Supplier"><input value={hsForm.supplier} onChange={e=>setHsForm({...hsForm,supplier:e.target.value})}/></Field><Field label="Batch"><input value={hsForm.batch} onChange={e=>setHsForm({...hsForm,batch:e.target.value})}/></Field><Field label="Received date"><input type="date" value={hsForm.received_date} onChange={e=>setHsForm({...hsForm,received_date:e.target.value})}/></Field><Field label="Cost (RM)"><input type="number" step="0.01" value={hsForm.cost} onChange={e=>setHsForm({...hsForm,cost:e.target.value})}/></Field><Field label="Selling price (RM)"><input type="number" step="0.01" value={hsForm.selling_price} onChange={e=>setHsForm({...hsForm,selling_price:e.target.value})}/></Field><div className="form-actions">{stockError && <p role="alert">{stockError}</p>}<button className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Stock in'}</button></div></form></Modal>
+ <Modal open={hsOpen} onClose={()=>{if(!saving){setHsOpen(false);setStockError('')}}} title="Stock in hair system" wide><form className="form-grid" onSubmit={stockIn}><Field label="Quantity"><input type="number" min="1" step="1" required value={quantity} onChange={e=>setQuantity(e.target.value)}/></Field><Field label="SKU"><input required={Number(quantity)>1} pattern={Number(quantity)>1 ? '.*\\S.*' : undefined} value={hsForm.sku} onChange={e=>setHsForm({...hsForm,sku:e.target.value})}/></Field><Field label="Base"><input value={hsForm.base} onChange={e=>setHsForm({...hsForm,base:e.target.value})} placeholder="0.06 Poly / Lace..."/></Field><Field label="Colour"><input value={hsForm.colour} onChange={e=>setHsForm({...hsForm,colour:e.target.value})}/></Field><Field label="Size"><input value={hsForm.size} onChange={e=>setHsForm({...hsForm,size:e.target.value})}/></Field><Field label="Density"><input value={hsForm.density} onChange={e=>setHsForm({...hsForm,density:e.target.value})}/></Field><Field label="Length"><input value={hsForm.length} onChange={e=>setHsForm({...hsForm,length:e.target.value})}/></Field><Field label="Hair type"><input value={hsForm.hair_type} onChange={e=>setHsForm({...hsForm,hair_type:e.target.value})}/></Field><Field label="Supplier"><input value={hsForm.supplier} onChange={e=>setHsForm({...hsForm,supplier:e.target.value})}/></Field><Field label="Batch"><input value={hsForm.batch} onChange={e=>setHsForm({...hsForm,batch:e.target.value})}/></Field><Field label="Received date"><input type="date" value={hsForm.received_date} onChange={e=>setHsForm({...hsForm,received_date:e.target.value})}/></Field><Field label="Cost (RM)"><input type="number" step="0.01" value={hsForm.cost} onChange={e=>setHsForm({...hsForm,cost:e.target.value})}/></Field><Field label="Selling price (RM)"><input type="number" step="0.01" value={hsForm.selling_price} onChange={e=>setHsForm({...hsForm,selling_price:e.target.value})}/></Field><div className="form-actions">{stockError && <p role="alert">{stockError}</p>}<button className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Stock in'}</button></div></form></Modal>
  <Modal open={conOpen} onClose={()=>setConOpen(false)} title="Add consumable"><form className="form-grid" onSubmit={async e=>{e.preventDefault();await saveConsumable({...conForm,qty:Number(conForm.qty||0),min_qty:Number(conForm.min_qty||0),unit_cost:Number(conForm.unit_cost||0)});setConOpen(false);setConForm(conBlank);load()}}><Field label="Name"><input required value={conForm.name} onChange={e=>setConForm({...conForm,name:e.target.value})}/></Field><Field label="SKU"><input value={conForm.sku} onChange={e=>setConForm({...conForm,sku:e.target.value})}/></Field><Field label="Category"><select value={conForm.category} onChange={e=>setConForm({...conForm,category:e.target.value})}>{['Tape','Adhesive','Remover','Cleaning','Styling','Other'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Unit"><input value={conForm.unit} onChange={e=>setConForm({...conForm,unit:e.target.value})}/></Field><Field label="Opening qty"><input type="number" step="0.01" value={conForm.qty} onChange={e=>setConForm({...conForm,qty:e.target.value})}/></Field><Field label="Low-stock level"><input type="number" step="0.01" value={conForm.min_qty} onChange={e=>setConForm({...conForm,min_qty:e.target.value})}/></Field><Field label="Supplier"><input value={conForm.supplier} onChange={e=>setConForm({...conForm,supplier:e.target.value})}/></Field><Field label="Unit cost (RM)"><input type="number" step="0.01" value={conForm.unit_cost} onChange={e=>setConForm({...conForm,unit_cost:e.target.value})}/></Field><div className="form-actions"><button className="btn btn-primary">Add consumable</button></div></form></Modal>
  <Modal open={!!adjust} onClose={()=>setAdjust(null)} title={`Adjust ${adjust?.name||''}`}><AdjustForm item={adjust} onDone={()=>{setAdjust(null);load()}}/></Modal>
  <Modal open={!!install} onClose={()=>setInstall(null)} title={`Assign ${install?.code||''}`}><InstallForm item={install} customers={customers} onDone={()=>{setInstall(null);load()}}/></Modal>

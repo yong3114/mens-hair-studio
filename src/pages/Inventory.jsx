@@ -6,6 +6,26 @@ import { customerLabel, localDateKey, money, shortDate } from '../lib/utils'
 
 const hsBlank={sku:'',base:'',colour:'1B',size:'',density:'100%',length:'6 inch',hair_type:'Human Hair',supplier:'',batch:'',cost:'',selling_price:'',status:'available',received_date:localDateKey(new Date())}
 const conBlank={name:'',sku:'',category:'Tape',unit:'roll',qty:'',min_qty:'',supplier:'',unit_cost:''}
+const specs = {base:'Base', colour:'Colour', size:'Size'}
+const specKeys = Object.keys(specs)
+const normalise = value => String(value ?? '').trim().toLowerCase()
+
+function matchesUnit(unit, search, filters, availableOnly) {
+  if (availableOnly && unit.status !== 'available') return false
+  if (!specKeys.every(key => !filters[key] || normalise(unit[key]) === filters[key])) return false
+  return [unit.sku,unit.code,unit.base,unit.colour,unit.size,unit.status]
+    .some(value => normalise(value).includes(search))
+}
+
+function specValues(units,key) {
+  const values = new Map()
+  for (const unit of units) {
+    const value = normalise(unit[key])
+    if (value && !values.has(value)) values.set(value, String(unit[key]).trim())
+  }
+  return [...values.values()].sort((a,b) => a.localeCompare(b,undefined,{numeric:true}))
+}
+
 export default function Inventory(){
  const [tab,setTab]=useState('systems'),[systems,setSystems]=useState([]),[cons,setCons]=useState([]),[customers,setCustomers]=useState([]),[q,setQ]=useState(''),[hsOpen,setHsOpen]=useState(false),[conOpen,setConOpen]=useState(false),[adjust,setAdjust]=useState(null),[install,setInstall]=useState(null),[hsForm,setHsForm]=useState(hsBlank),[conForm,setConForm]=useState(conBlank)
  const load=async()=>{const [h,c,cu]=await Promise.all([listHairSystems(),listConsumables(),listCustomers()]);setSystems(h);setCons(c);setCustomers(cu)};useEffect(()=>{load()},[])
@@ -56,6 +76,10 @@ export default function Inventory(){
      setSaving(false)
    }
  }
+ const [filters,setFilters] = useState({})
+ const [availableOnly,setAvailableOnly] = useState(false)
+ const search = normalise(q)
+ const choices = useMemo(() => Object.fromEntries(specKeys.map(key => [key,specValues(systems,key)])),[systems])
  const groups = useMemo(() => {
    const bySku = new Map()
    for (const unit of systems) {
@@ -65,25 +89,37 @@ export default function Inventory(){
      group.units.push(unit)
      group.counts[unit.status] = (group.counts[unit.status] || 0) + 1
    }
-   const search = q.trim().toLowerCase()
-   return [...bySku.values()].filter(group => group.units.some(unit =>
-     [unit.sku,unit.code,unit.base,unit.colour,unit.size,unit.status].join(' ').toLowerCase().includes(search)))
- }, [systems,q])
+   return [...bySku.values()]
+ }, [systems])
+ const visibleGroups = useMemo(() => groups.filter(group =>
+   group.units.some(unit => matchesUnit(unit,search,filters,availableOnly))
+ ),[groups,search,filters,availableOnly])
  const fc=useMemo(()=>cons.filter(x=>`${x.name} ${x.sku} ${x.category}`.toLowerCase().includes(q.toLowerCase())),[cons,q])
  return <div className="page"><div className="page-head"><div><span className="eyebrow">STOCK</span><h1>Inventory</h1><p>Simple stock control: available, reserved, installed and low-stock consumables.</p></div><button className="btn btn-primary" onClick={()=>tab==='systems'?openReceipt():setConOpen(true)}><Plus size={17}/>Add {tab==='systems'?'hair system':'consumable'}</button></div>
- <div className="inventory-top"><Tabs value={tab} onChange={setTab} items={[{value:'systems',label:'Hair Systems'},{value:'consumables',label:'Consumables'}]}/><div className="search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search inventory..."/></div></div>
+ <div className="inventory-top"><Tabs value={tab} onChange={setTab} items={[{value:'systems',label:'Hair Systems'},{value:'consumables',label:'Consumables'}]}/><div className="search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} aria-label="Search inventory" placeholder={tab === 'systems' ? 'Search SKU or unit code…' : 'Search consumables…'}/></div></div>
+ {tab === 'systems' && <div style={{display:'flex',gap:'1rem',alignItems:'center',flexWrap:'wrap',marginBottom:'1rem'}}>
+   {specKeys.map(key => <label key={key}>{specs[key]} <select value={filters[key] || ''} onChange={e => setFilters({...filters,[key]:e.target.value})}>
+     <option value="">All</option>
+     {choices[key].map(value => <option key={value} value={normalise(value)}>{value}</option>)}
+   </select></label>)}
+   <label><input type="checkbox" checked={availableOnly} onChange={e => setAvailableOnly(e.target.checked)}/> Available only</label>
+   {(q || availableOnly || Object.values(filters).some(Boolean)) && <button className="btn btn-ghost btn-sm" onClick={() => {setQ('');setFilters({});setAvailableOnly(false)}}>Clear filters</button>}
+ </div>}
  {tab === 'systems' && <section className="panel table-panel">
-   {groups.map(({ key, units, counts }) => <details key={key}>
+   {visibleGroups.map(({ key, units, counts }) => {
+     const matched = search && units.find(unit => normalise(unit.code) === search && matchesUnit(unit,search,filters,availableOnly))
+     return <details key={key + (matched ? ':' + matched.id : '')} open={matched ? true : undefined}>
      <summary style={{cursor:'pointer',padding:'1rem'}}>
        <strong>{units[0].sku || units[0].code}</strong>
+       {specKeys.map(key => <span key={key}> · {specs[key]} {specValues(units,key).join(' / ') || '—'}</span>)}
        <span> · Available {counts.available || 0} · Reserved {counts.reserved || 0} · Installed {counts.installed || 0}</span>
        {counts.damaged > 0 && <span> · Damaged {counts.damaged}</span>}
        {counts.returned > 0 && <span> · Returned {counts.returned}</span>}
      </summary>
      <button className="btn btn-ghost btn-sm" onClick={() => openReceipt(units[0])}>Stock in same SKU</button>
-     <div className="responsive-table"><table><thead><tr><th>System</th><th>Specs</th><th>Status</th><th>Customer</th><th>Cost / Sell</th><th></th></tr></thead><tbody>{units.map(x=><tr key={x.id}><td data-label="System"><strong>{x.code}</strong><span>{x.sku||'No SKU'} · {x.supplier||'No supplier'}</span></td><td data-label="Specs">{[x.base,x.colour,x.size,x.density,x.length].filter(Boolean).join(' · ')}</td><td data-label="Status"><Badge tone={x.status==='available'?'success':x.status==='installed'?'neutral':x.status==='reserved'?'warn':'danger'}>{x.status}</Badge></td><td data-label="Customer">{x.customers?customerLabel(x.customers):'—'}</td><td data-label="Cost / Sell"><strong>{money(x.cost)}</strong><span>{money(x.selling_price)}</span></td><td className="row-actions">{x.status==='available'&&<button className="btn btn-ghost btn-sm" onClick={()=>setInstall(x)}>Assign / Install</button>}</td></tr>)}</tbody></table></div>
-   </details>)}
-   {!groups.length && <Empty title={q ? 'No matching hair systems' : 'No hair systems'} text="Add stock or search by SKU or unit code."/>}
+     <div className="responsive-table"><table><thead><tr><th>System</th><th>Specs</th><th>Status</th><th>Customer</th><th>Cost / Sell</th><th></th></tr></thead><tbody>{units.map(x=><tr key={x.id}><td data-label="System"><strong>{matched?.id === x.id ? <mark>{x.code}</mark> : x.code}</strong><span>{x.sku||'No SKU'} · {x.supplier||'No supplier'}</span></td><td data-label="Specs">{[x.base,x.colour,x.size,x.density,x.length].filter(Boolean).join(' · ')}</td><td data-label="Status"><Badge tone={x.status==='available'?'success':x.status==='installed'?'neutral':x.status==='reserved'?'warn':'danger'}>{x.status}</Badge></td><td data-label="Customer">{x.customers?customerLabel(x.customers):'—'}</td><td data-label="Cost / Sell"><strong>{money(x.cost)}</strong><span>{money(x.selling_price)}</span></td><td className="row-actions">{x.status==='available'&&<button className="btn btn-ghost btn-sm" onClick={()=>setInstall(x)}>Assign / Install</button>}</td></tr>)}</tbody></table></div>
+   </details>})}
+   {!visibleGroups.length && <Empty title={systems.length ? 'No matching hair systems' : 'No hair systems'} text={systems.length ? "Try another search or clear your filters." : "Add stock to get started."}/>}
  </section>}
  {tab==='consumables'&&<section className="panel table-panel">{fc.length?<div className="responsive-table"><table><thead><tr><th>Consumable</th><th>Category</th><th>On hand</th><th>Minimum</th><th>Supplier</th><th></th></tr></thead><tbody>{fc.map(x=>{const low=Number(x.qty)<=Number(x.min_qty);return <tr key={x.id}><td data-label="Consumable"><strong>{x.name}</strong><span>{x.sku||'No SKU'}</span></td><td data-label="Category">{x.category}</td><td data-label="On hand"><strong className={low?'text-danger':''}>{x.qty} {x.unit}</strong>{low&&<Badge tone="danger">Low</Badge>}</td><td data-label="Minimum">{x.min_qty} {x.unit}</td><td data-label="Supplier">{x.supplier||'—'}</td><td className="row-actions"><button className="btn btn-ghost btn-sm" onClick={()=>setAdjust(x)}><ArrowUpDown size={15}/>Adjust</button></td></tr>})}</tbody></table></div>:<Empty title="No consumables" text="Add tapes, glue, remover, shampoo and other service stock."/>}</section>}
  <Modal open={hsOpen} onClose={()=>{if(!saving){setHsOpen(false);setStockError('')}}} title="Stock in hair system" wide><form className="form-grid" onSubmit={stockIn}><Field label="Quantity"><input type="number" min="1" step="1" required value={quantity} onChange={e=>setQuantity(e.target.value)}/></Field><Field label="SKU"><input required={Number(quantity)>1} pattern={Number(quantity)>1 ? '.*\\S.*' : undefined} value={hsForm.sku} onChange={e=>setHsForm({...hsForm,sku:e.target.value})}/></Field><Field label="Base"><input value={hsForm.base} onChange={e=>setHsForm({...hsForm,base:e.target.value})} placeholder="0.06 Poly / Lace..."/></Field><Field label="Colour"><input value={hsForm.colour} onChange={e=>setHsForm({...hsForm,colour:e.target.value})}/></Field><Field label="Size"><input value={hsForm.size} onChange={e=>setHsForm({...hsForm,size:e.target.value})}/></Field><Field label="Density"><input value={hsForm.density} onChange={e=>setHsForm({...hsForm,density:e.target.value})}/></Field><Field label="Length"><input value={hsForm.length} onChange={e=>setHsForm({...hsForm,length:e.target.value})}/></Field><Field label="Hair type"><input value={hsForm.hair_type} onChange={e=>setHsForm({...hsForm,hair_type:e.target.value})}/></Field><Field label="Supplier"><input value={hsForm.supplier} onChange={e=>setHsForm({...hsForm,supplier:e.target.value})}/></Field><Field label="Batch"><input value={hsForm.batch} onChange={e=>setHsForm({...hsForm,batch:e.target.value})}/></Field><Field label="Received date"><input type="date" value={hsForm.received_date} onChange={e=>setHsForm({...hsForm,received_date:e.target.value})}/></Field><Field label="Cost (RM)"><input type="number" step="0.01" value={hsForm.cost} onChange={e=>setHsForm({...hsForm,cost:e.target.value})}/></Field><Field label="Selling price (RM)"><input type="number" step="0.01" value={hsForm.selling_price} onChange={e=>setHsForm({...hsForm,selling_price:e.target.value})}/></Field><div className="form-actions">{stockError && <p role="alert">{stockError}</p>}<button className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Stock in'}</button></div></form></Modal>

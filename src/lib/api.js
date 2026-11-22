@@ -25,7 +25,7 @@ export async function getDashboard(userId=null) {
 export async function listLeads(){ return ok(await supabase.from('leads').select('*').order('created_at',{ascending:false})) }
 export async function saveLead(payload,id){ return ok(id ? await supabase.from('leads').update(payload).eq('id',id).select().single() : await supabase.from('leads').insert(payload).select().single()) }
 export async function listLeadFollowups(leadId){ return ok(await supabase.from('lead_followups').select('*,profiles!lead_followups_created_by_fkey(full_name)').eq('lead_id',leadId).order('contacted_at',{ascending:false}).limit(100)) }
-export async function logLeadContact(leadId,{note='',next_follow_up_date=null,channel='WhatsApp',outcome='general'}={}){ const {data,error}=await supabase.rpc('log_lead_contact',{p_lead_id:leadId,p_note:note||null,p_next_follow_up_date:next_follow_up_date||null,p_channel:channel,p_outcome:outcome}); if(error)throw error; return data }
+export async function logLeadContact(leadId,{clearReminder=false,note='',next_follow_up_date=null,channel='WhatsApp',outcome='general'}={}){ const {data,error}=await supabase.rpc('record_lead_contact',{p_clear_reminder:clearReminder,p_lead_id:leadId,p_note:note||null,p_next_follow_up_date:next_follow_up_date||null,p_channel:channel,p_outcome:outcome}); if(error)throw error; return data }
 export async function deleteLead(id){
   // Testing-friendly cleanup: remove linked consultation bookings first so deleted leads do not leave orphan calendar records.
   const appts = await supabase.from('appointments').select('id').eq('lead_id',id); ok(appts)

@@ -1,3 +1,4 @@
+import { studioDay } from './utils'
 import { supabase } from './supabase'
 
 const ok = (r) => { if (r.error) throw r.error; return r.data }
@@ -5,7 +6,7 @@ const ok = (r) => { if (r.error) throw r.error; return r.data }
 export async function getProfile(userId) { return ok(await supabase.from('profiles').select('*').eq('id', userId).single()) }
 
 export async function getDashboard(userId=null) {
-  const start = new Date(); start.setHours(0,0,0,0)
+  const start = new Date(studioDay()+'T00:00:00+08:00')
   const [leads, customers, appts, systems, consumables, payments, services, consultations, deals, notifications] = await Promise.all([
     supabase.from('leads').select('id,name,whatsapp_name,phone,stage,interest_status,follow_up_date'),
     supabase.from('customers').select('id,lifecycle_stage'),

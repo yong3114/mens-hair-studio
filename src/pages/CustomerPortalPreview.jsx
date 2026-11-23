@@ -4,7 +4,15 @@ import { getCustomer, signedMedia } from '../lib/api'
 import { Badge, Empty } from '../components/UI'
 import { customerLabel, dateTime, money, shortDate, mapsUrl } from '../lib/utils'
 
-export default function CustomerPortalPreview({id,onExit,onBook}){
+import Members from './Members'
+
+export default function CustomerPortalPreview({id,onExit}){
+ const [records,setRecords]=useState(false)
+ if(records)return <ClientRecords id={id} onExit={()=>setRecords(false)} onBook={()=>setRecords(false)}/>
+ return <Members key={id} previewId={id} onExit={onExit} onRecords={()=>setRecords(true)}/>
+}
+
+function ClientRecords({id,onExit,onBook}){
  const[d,setD]=useState(null),[urls,setUrls]=useState({}),[tab,setTab]=useState('home')
  useEffect(()=>{getCustomer(id).then(setD)},[id])
  useEffect(()=>{if(!d?.media?.length){setUrls({});return}Promise.all(d.media.map(async m=>[m.id,await signedMedia(m.storage_path).catch(()=>null)])).then(x=>setUrls(Object.fromEntries(x)))},[d?.media?.length])
@@ -19,12 +27,12 @@ export default function CustomerPortalPreview({id,onExit,onBook}){
  const media=d.media.slice(0,24)
  const nav=[['home','Home',Home],['visits','Visits',CalendarDays],['photos','Photos',ImageIcon],['account','Account',WalletCards]]
  return <div className="portal-shell">
-   <header className="portal-preview-bar"><button className="portal-back" onClick={onExit}><ArrowLeft size={18}/>Exit preview</button><div><strong>Customer view</strong><span>Preview only — customer login is not enabled yet</span></div></header>
+   <header className="portal-preview-bar"><button className="portal-back" onClick={onExit}><ArrowLeft size={18}/>Back to customer view</button><div><strong>Customer view</strong><span>Staff view · client records</span></div></header>
    <main className="portal-main">
      {tab==='home'&&<>
        <section className="portal-hero"><span className="portal-kicker">MY HAIR STUDIO</span><h1>Hi, {customerLabel(c)}</h1><p>Your appointments, hair system and service history in one place.</p></section>
        {upcoming?<section className="portal-next-card"><div className="portal-card-icon"><CalendarDays size={22}/></div><div className="grow"><span className="portal-label">NEXT APPOINTMENT</span><h2>{upcoming.service_type}</h2><p>{dateTime(upcoming.scheduled_at)} · {upcoming.location_type==='home'?'Home visit':'Studio'}</p>{upcoming.location_type==='home'&&upcoming.address&&<small>{upcoming.place_name||upcoming.address}</small>}</div><Badge tone={upcoming.status==='confirmed'?'success':'neutral'}>{upcoming.status.replace('_',' ')}</Badge></section>:<section className="portal-empty-card"><CalendarDays size={22}/><div><strong>No upcoming appointment</strong><span>Your next booking will appear here.</span></div></section>}
-       <div className="portal-actions"><button onClick={onBook}><CalendarDays size={19}/><span><strong>Book service</strong><small>Request your next visit</small></span><ChevronRight size={18}/></button>{c.address&&<a href={mapsUrl(c)} target="_blank" rel="noreferrer"><MapPin size={19}/><span><strong>Saved location</strong><small>Open Google Maps</small></span><ChevronRight size={18}/></a>}</div>
+       <div className="portal-actions"><button onClick={onBook}><CalendarDays size={19}/><span><strong>Customer view</strong><small>See member booking times</small></span><ChevronRight size={18}/></button>{c.address&&<a href={mapsUrl(c)} target="_blank" rel="noreferrer"><MapPin size={19}/><span><strong>Saved location</strong><small>Open Google Maps</small></span><ChevronRight size={18}/></a>}</div>
        <div className="portal-summary-grid"><article><WalletCards size={19}/><span>Account credit</span><strong>{money(stats.credit)}</strong></article><article><CreditCard size={19}/><span>Outstanding</span><strong>{money(stats.outstanding)}</strong></article><article><Scissors size={19}/><span>Last service</span><strong>{last?shortDate(last.completed_at):'—'}</strong></article></div>
        <section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">MY HAIR SYSTEM</span><h2>Current system</h2></div></div>{currentSystem?<div className="portal-system"><div><Badge tone={currentSystem.status==='installed'?'success':'neutral'}>{currentSystem.status}</Badge><h3>{currentSystem.code}</h3></div><div className="portal-specs"><span>Base<strong>{currentSystem.base||'—'}</strong></span><span>Colour<strong>{currentSystem.colour||'—'}</strong></span><span>Size<strong>{currentSystem.size||'—'}</strong></span><span>Density<strong>{currentSystem.density||'—'}</strong></span></div></div>:<Empty title="No hair system yet" text="Your installed hair system details will appear here."/>}</section>
        <section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">PROFILE</span><h2>Your details</h2></div><UserRound size={20}/></div><div className="portal-profile"><div><span>Phone</span><strong>{c.phone||'—'}</strong></div><div><span>Email</span><strong>{c.email||'—'}</strong></div><div><span>Area</span><strong>{c.area||'—'}</strong></div>{c.address&&<div className="wide"><span>Saved address</span><strong>{c.address}</strong></div>}</div></section>
@@ -44,7 +52,7 @@ export default function CustomerPortalPreview({id,onExit,onBook}){
        <section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">PAYMENTS</span><h2>Recent transactions</h2></div></div>{d.payments.length?<div className="portal-payments">{d.payments.slice(0,30).map(p=><div key={p.id}><div><strong>{p.type}</strong><span>{shortDate(p.paid_at||p.created_at)} · {p.method}</span></div><div><strong>{money(p.amount)}</strong><Badge tone={p.status==='paid'?'success':p.status==='outstanding'?'warn':'neutral'}>{p.status}</Badge></div></div>)}</div>:<Empty title="No payments yet"/>}</section>
        {d.credits.length>0&&<section className="portal-section"><div className="portal-section-head"><div><span className="portal-label">CREDIT HISTORY</span><h2>Account credit</h2></div></div><div className="portal-payments">{d.credits.slice(0,30).map(x=><div key={x.id}><div><strong>{x.type}</strong><span>{shortDate(x.created_at)} · {x.notes||''}</span></div><strong>{x.type==='use'?'-':'+'}{money(x.amount)}</strong></div>)}</div></section>}
      </>}
-     <p className="portal-preview-note">Preview mode uses your admin session. A real customer login will need customer-specific authentication and RLS before launch.</p>
+     <p className="portal-preview-note">Staff records may include private notes and photos.</p>
    </main>
    <nav className="portal-bottom-nav">{nav.map(([key,label,Icon])=><button key={key} className={tab===key?'active':''} onClick={()=>setTab(key)}><Icon size={20}/><span>{label}</span></button>)}</nav>
  </div>

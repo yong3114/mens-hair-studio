@@ -37,7 +37,22 @@ export default function Appointments({prefill,onStartService,onStartConsultation
  const[open,setOpen]=useState(false),[form,setForm]=useState(appointmentBlank()),[editing,setEditing]=useState(null),[selectedMap,setSelectedMap]=useState(null),[error,setError]=useState(''),[assignee,setAssignee]=useState('all'),[notice,setNotice]=useState(''),[statusBusy,setStatusBusy]=useState(false)
  const queryView=['agenda','map'].includes(view)?'month':view
  const load=async()=>{const[start,end]=rangeForView(queryView,cursor);const[a,c,l,p]=await Promise.all([listAppointments(start.toISOString(),end.toISOString()),listCustomers(),listLeads(),listProfiles()]);setRows(a);setCustomers(c);setLeads(l);setProfiles(p)}
- useEffect(()=>{load()},[cursor.getFullYear(),cursor.getMonth(),cursor.getDate(),queryView])
+ useEffect(()=>{
+  load()
+  let active=true,latest=0
+  const refreshBookings=async()=>{
+   if(document.hidden)return
+   const seq=++latest
+   const [start,end]=rangeForView(queryView,cursor)
+   try{
+    const records=await listAppointments(start.toISOString(),end.toISOString())
+    if(active&&seq===latest)setRows(records)
+   }catch{/* Retain the current calendar until the next refresh. */}
+  }
+  const timer=setInterval(refreshBookings,30000)
+  window.addEventListener('focus',refreshBookings)
+  return ()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refreshBookings)}
+ },[cursor.getFullYear(),cursor.getMonth(),cursor.getDate(),queryView])
  useEffect(()=>{if(prefill?.record)openForPrefill(prefill)},[prefill?.kind,prefill?.record?.id,prefill?.service_type])
  const visibleRows=useMemo(()=>assignee==='all'?rows:rows.filter(x=>String(x.assigned_user_id||'')===assignee),[rows,assignee])
  const byDay=useMemo(()=>{const m={};visibleRows.forEach(x=>{const k=localDateKey(x.scheduled_at);(m[k] ||= []).push(x)});Object.values(m).forEach(v=>v.sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at)));return m},[visibleRows])

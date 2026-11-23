@@ -8,6 +8,74 @@ const blank={concern:'',coverage_area:'',colour_preference:'',density_preference
 const tone=o=>o==='signed'?'success':o==='follow_up'?'warn':o==='not_signed'?'danger':'neutral'
 const labelFor=x=>x.customers?customerLabel(x.customers):leadLabel(x.leads)
 
+const preferences = {
+  "concern": {
+    "label": "Hair concern",
+    "options": [
+      "Thinning hair",
+      "Receding hairline",
+      "Bald patch",
+      "Hair system replacement"
+    ]
+  },
+  "coverage_area": {
+    "label": "Coverage area",
+    "options": [
+      "Frontal",
+      "Crown",
+      "Top",
+      "Frontal and crown",
+      "Full head"
+    ]
+  },
+  "colour_preference": {
+    "label": "Colour preference",
+    "options": [
+      "Match existing hair",
+      "Natural black",
+      "Dark brown",
+      "Medium brown",
+      "Grey blend"
+    ]
+  },
+  "density_preference": {
+    "label": "Density preference",
+    "options": [
+      "Light",
+      "Medium light",
+      "Medium",
+      "Medium heavy",
+      "Heavy"
+    ]
+  },
+  "hairline_preference": {
+    "label": "Hairline preference",
+    "options": [
+      "Match existing hairline",
+      "Soft graduated",
+      "Straight",
+      "Receded / mature"
+    ]
+  }
+}
+
+function PreferenceField({field, value, onChange}) {
+ const {label, options} = preferences[field]
+ const [custom, setCustom] = useState(() => Boolean(value && !options.includes(value)))
+ return <Field label={label}>
+  <select aria-label={label} value={custom ? '__custom' : value} onChange={event => {
+   const next = event.target.value
+   setCustom(next === '__custom')
+   onChange(next === '__custom' ? '' : next)
+  }}>
+   <option value="">Select…</option>
+   {options.map(option => <option key={option}>{option}</option>)}
+   <option value="__custom">Other (specify)</option>
+  </select>
+  {custom && <input aria-label={`Custom ${label.toLowerCase()}`} placeholder="Enter details" value={value} onChange={event => onChange(event.target.value)}/>}
+ </Field>
+}
+
 export default function Sales({prefill,onDone,onViewCustomer,onBookInstallation}){
  const[tab,setTab]=useState('consultations'),[consultations,setConsultations]=useState([]),[deals,setDeals]=useState([]),[systems,setSystems]=useState([]),[active,setActive]=useState(null),[form,setForm]=useState(blank),[outcome,setOutcome]=useState('follow_up'),[open,setOpen]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('')
  const load=async()=>{const[c,d,h]=await Promise.all([listConsultations(),listDeals(),listHairSystems()]);setConsultations(c);setDeals(d);setSystems(h)}
@@ -33,9 +101,9 @@ export default function Sales({prefill,onDone,onViewCustomer,onBookInstallation}
   <Modal open={open} onClose={()=>setOpen(false)} title="Consultation outcome" wide>{active&&<form className="form-grid consultation-form" onSubmit={finish}>
     {error&&<div className="notice danger span-2">{error}</div>}
     <div className="consultation-person span-2"><div><span className="eyebrow">CONSULTATION</span><h3>{labelFor(active)}</h3><p>{active.appointments?dateTime(active.appointments.scheduled_at):'In progress'}</p></div><Badge tone="warn">in progress</Badge></div>
-    <Field label="Hair concern"><input value={form.concern} onChange={e=>setForm({...form,concern:e.target.value})}/></Field><Field label="Coverage area"><input value={form.coverage_area} onChange={e=>setForm({...form,coverage_area:e.target.value})} placeholder="Top / crown / frontal..."/></Field>
-    <Field label="Colour preference"><input value={form.colour_preference} onChange={e=>setForm({...form,colour_preference:e.target.value})}/></Field><Field label="Density preference"><input value={form.density_preference} onChange={e=>setForm({...form,density_preference:e.target.value})}/></Field>
-    <Field label="Hairline preference"><input value={form.hairline_preference} onChange={e=>setForm({...form,hairline_preference:e.target.value})}/></Field><Field label="Budget (RM)"><input type="number" min="0" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})}/></Field>
+    <PreferenceField key={`${active?.id}-concern`} field="concern" value={form.concern} onChange={value=>setForm(previous=>({...previous,concern:value}))}/><PreferenceField key={`${active?.id}-coverage_area`} field="coverage_area" value={form.coverage_area} onChange={value=>setForm(previous=>({...previous,coverage_area:value}))}/>
+    <PreferenceField key={`${active?.id}-colour_preference`} field="colour_preference" value={form.colour_preference} onChange={value=>setForm(previous=>({...previous,colour_preference:value}))}/><PreferenceField key={`${active?.id}-density_preference`} field="density_preference" value={form.density_preference} onChange={value=>setForm(previous=>({...previous,density_preference:value}))}/>
+    <PreferenceField key={`${active?.id}-hairline_preference`} field="hairline_preference" value={form.hairline_preference} onChange={value=>setForm(previous=>({...previous,hairline_preference:value}))}/><Field label="Budget (RM)"><input type="number" min="0" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})}/></Field>
     <Field label="Lifestyle"><textarea value={form.lifestyle} onChange={e=>setForm({...form,lifestyle:e.target.value})}/></Field><Field label="Ah Bi recommendation"><textarea value={form.recommendation} onChange={e=>setForm({...form,recommendation:e.target.value})}/></Field>
     <div className="span-2 outcome-picker"><span className="field-label">Consultation outcome</span><div><button type="button" className={outcome==='signed'?'active success':''} onClick={()=>setOutcome('signed')}><CheckCircle2 size={18}/>Signed</button><button type="button" className={outcome==='follow_up'?'active warn':''} onClick={()=>setOutcome('follow_up')}><Clock3 size={18}/>Follow up</button><button type="button" className={outcome==='not_signed'?'active danger':''} onClick={()=>setOutcome('not_signed')}><XCircle size={18}/>Not signed</button></div></div>
     {outcome==='follow_up'&&<><Field label="Follow-up date"><input required type="date" value={form.follow_up_date} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/></Field><Field label="Follow-up notes"><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Price / discuss with family / compare..."/></Field></>}

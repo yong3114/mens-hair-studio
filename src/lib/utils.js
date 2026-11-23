@@ -1,3 +1,6 @@
+export const studioZone = 'Asia/Kuala_Lumpur'
+const studioDayFormatter = new Intl.DateTimeFormat('sv-SE', {timeZone:studioZone,year:'numeric',month:'2-digit',day:'2-digit'})
+export const studioDay = (instant=new Date()) => studioDayFormatter.format(new Date(instant))
 export const money = (v) => new Intl.NumberFormat('en-MY', { style:'currency', currency:'MYR', maximumFractionDigits:2 }).format(Number(v || 0))
 export const shortDate = (v) => v ? new Intl.DateTimeFormat('en-MY', { day:'2-digit', month:'short', year:'numeric' }).format(new Date(v)) : '—'
 export const dateTime = (v) => v ? new Intl.DateTimeFormat('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(v)) : '—'

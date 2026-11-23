@@ -44,7 +44,7 @@ export default function App(){
  const openAppointment=a=>{if(isConsultationType(a.service_type)){navigate('sales');setSalesPrefill(a)}else{navigate('services');setServicePrefill({appointment:a,customer:a.customers||null})}}
  const bookFor=(record,kind='customer',service_type=null)=>{navigate('appointments');setAppointmentPrefill({kind,record,service_type})}
 
- if(page==='portal-preview'&&portalCustomerId)return <CustomerPortalPreview id={portalCustomerId} onExit={()=>window.history.back()} onBook={()=>alert('Customer self-booking is planned for V2.4. This is the customer UI preview for now.')}/>
+ if(page==='portal-preview'&&portalCustomerId)return <CustomerPortalPreview id={portalCustomerId} onExit={()=>window.history.back()}/>
 
  let content
  if(page==='dashboard')content=<Dashboard go={go} profile={profile} onStartService={openAppointment} onStartConsultation={openAppointment}/>

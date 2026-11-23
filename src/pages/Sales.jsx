@@ -56,6 +56,58 @@ const preferences = {
       "Straight",
       "Receded / mature"
     ]
+  },
+  "base": {
+    "label": "Base",
+    "options": [
+      "Skin",
+      "Lace",
+      "Hybrid",
+      "Mono"
+    ]
+  },
+  "colour": {
+    "label": "Colour",
+    "options": [
+      "1",
+      "1B",
+      "2",
+      "4"
+    ]
+  },
+  "size": {
+    "label": "Size",
+    "options": [
+      "6 × 8 in",
+      "7 × 9 in",
+      "8 × 10 in"
+    ]
+  },
+  "density": {
+    "label": "Density",
+    "options": [
+      "80%",
+      "90%",
+      "100%",
+      "110%",
+      "120%"
+    ]
+  },
+  "length": {
+    "label": "Length",
+    "options": [
+      "4 inch",
+      "6 inch",
+      "8 inch"
+    ]
+  },
+  "hair_type": {
+    "label": "Hair type",
+    "options": [
+      "Human Hair",
+      "Synthetic",
+      "Human / synthetic blend"
+    ]
   }
 }
 
@@ -73,6 +125,19 @@ function PreferenceField({field, value, onChange}) {
    <option value="__custom">Other (specify)</option>
   </select>
   {custom && <input aria-label={`Custom ${label.toLowerCase()}`} placeholder="Enter details" value={value} onChange={event => onChange(event.target.value)}/>}
+ </Field>
+}
+
+function NoteField({label, options, value, onChange}) {
+ return <Field label={label}>
+  <select aria-label={`Suggestions for ${label}`} value="" onChange={event=>{
+   const choice=event.target.value
+   if(choice && !value.split('\n').includes(choice)) onChange([value,choice].filter(Boolean).join('\n'))
+  }}>
+   <option value="">Add a suggestion…</option>
+   {options.map(option=><option key={option}>{option}</option>)}
+  </select>
+  <textarea aria-label={label} value={value} placeholder="Additional details (optional)" onChange={event=>onChange(event.target.value)}/>
  </Field>
 }
 
@@ -104,16 +169,16 @@ export default function Sales({prefill,onDone,onViewCustomer,onBookInstallation}
     <PreferenceField key={`${active?.id}-concern`} field="concern" value={form.concern} onChange={value=>setForm(previous=>({...previous,concern:value}))}/><PreferenceField key={`${active?.id}-coverage_area`} field="coverage_area" value={form.coverage_area} onChange={value=>setForm(previous=>({...previous,coverage_area:value}))}/>
     <PreferenceField key={`${active?.id}-colour_preference`} field="colour_preference" value={form.colour_preference} onChange={value=>setForm(previous=>({...previous,colour_preference:value}))}/><PreferenceField key={`${active?.id}-density_preference`} field="density_preference" value={form.density_preference} onChange={value=>setForm(previous=>({...previous,density_preference:value}))}/>
     <PreferenceField key={`${active?.id}-hairline_preference`} field="hairline_preference" value={form.hairline_preference} onChange={value=>setForm(previous=>({...previous,hairline_preference:value}))}/><Field label="Budget (RM)"><input type="number" min="0" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})}/></Field>
-    <Field label="Lifestyle"><textarea value={form.lifestyle} onChange={e=>setForm({...form,lifestyle:e.target.value})}/></Field><Field label="Ah Bi recommendation"><textarea value={form.recommendation} onChange={e=>setForm({...form,recommendation:e.target.value})}/></Field>
+    <NoteField label="Lifestyle" options={["Office work","Outdoor work","Exercises regularly","Wears a helmet","Swims regularly"]} value={form.lifestyle} onChange={value=>setForm({...form,lifestyle:value})}/><NoteField label="Ah Bi recommendation" options={["Try a ready-stock system","Measure for a custom order","Match colour to existing hair","Discuss maintenance routine"]} value={form.recommendation} onChange={value=>setForm({...form,recommendation:value})}/>
     <div className="span-2 outcome-picker"><span className="field-label">Consultation outcome</span><div><button type="button" className={outcome==='signed'?'active success':''} onClick={()=>setOutcome('signed')}><CheckCircle2 size={18}/>Signed</button><button type="button" className={outcome==='follow_up'?'active warn':''} onClick={()=>setOutcome('follow_up')}><Clock3 size={18}/>Follow up</button><button type="button" className={outcome==='not_signed'?'active danger':''} onClick={()=>setOutcome('not_signed')}><XCircle size={18}/>Not signed</button></div></div>
-    {outcome==='follow_up'&&<><Field label="Follow-up date"><input required type="date" value={form.follow_up_date} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/></Field><Field label="Follow-up notes"><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Price / discuss with family / compare..."/></Field></>}
+    {outcome==='follow_up'&&<><Field label="Follow-up date"><input required type="date" value={form.follow_up_date} onChange={e=>setForm({...form,follow_up_date:e.target.value})}/></Field><NoteField label="Follow-up notes" options={["Discuss with family","Review quotation","Compare options","Confirm preferred timing"]} value={form.notes} onChange={value=>setForm({...form,notes:value})}/></>}
     {outcome==='not_signed'&&<><Field label="Reason"><select value={form.lost_reason} onChange={e=>setForm({...form,lost_reason:e.target.value})}><option value="">Select reason</option>{['Price','Not ready','Competitor','Distance','Not suitable','No reply','Other'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Notes"><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></Field></>}
     {outcome==='signed'&&<>
       <div className="span-2 signed-section-title"><span className="eyebrow">SIGNED DEAL</span><h3>Hair system selection & money</h3></div>
       <Field label="Real name (if known)"><input value={form.real_name} onChange={e=>setForm({...form,real_name:e.target.value})}/></Field><Field label="System source"><select value={form.system_source} onChange={e=>setForm({...form,system_source:e.target.value,hair_system_id:e.target.value==='stock'?form.hair_system_id:''})}><option value="stock">Ready stock</option><option value="custom">Custom order</option><option value="undecided">Decide later</option></select></Field>
       {form.system_source==='stock'&&<Field label="Reserve ready stock"><select value={form.hair_system_id} onChange={e=>{const h=available.find(x=>x.id===e.target.value);setForm({...form,hair_system_id:e.target.value,base:h?.base||form.base,colour:h?.colour||form.colour,size:h?.size||form.size,density:h?.density||form.density,length:h?.length||form.length,hair_type:h?.hair_type||form.hair_type})}}><option value="">Choose later</option>{available.map(h=><option key={h.id} value={h.id}>{h.code} · {h.base||'—'} · {h.colour||'—'} · {h.size||'—'}</option>)}</select></Field>}
       {form.system_source==='custom'&&<Field label="Expected ready date"><input type="date" value={form.expected_ready_date} onChange={e=>setForm({...form,expected_ready_date:e.target.value})}/></Field>}
-      <Field label="Base"><input value={form.base} onChange={e=>setForm({...form,base:e.target.value})}/></Field><Field label="Colour"><input value={form.colour} onChange={e=>setForm({...form,colour:e.target.value})}/></Field><Field label="Size"><input value={form.size} onChange={e=>setForm({...form,size:e.target.value})}/></Field><Field label="Density"><input value={form.density} onChange={e=>setForm({...form,density:e.target.value})}/></Field><Field label="Length"><input value={form.length} onChange={e=>setForm({...form,length:e.target.value})}/></Field><Field label="Hair type"><input value={form.hair_type} onChange={e=>setForm({...form,hair_type:e.target.value})}/></Field>
+      <PreferenceField key={`${form.hair_system_id}-base`} field="base" value={form.base} onChange={value=>setForm({...form,base:value})}/><PreferenceField key={`${form.hair_system_id}-colour`} field="colour" value={form.colour} onChange={value=>setForm({...form,colour:value})}/><PreferenceField key={`${form.hair_system_id}-size`} field="size" value={form.size} onChange={value=>setForm({...form,size:value})}/><PreferenceField key={`${form.hair_system_id}-density`} field="density" value={form.density} onChange={value=>setForm({...form,density:value})}/><PreferenceField key={`${form.hair_system_id}-length`} field="length" value={form.length} onChange={value=>setForm({...form,length:value})}/><PreferenceField key={`${form.hair_system_id}-hair_type`} field="hair_type" value={form.hair_type} onChange={value=>setForm({...form,hair_type:value})}/>
       <Field label="Quoted price (RM)"><input type="number" min="0" step="0.01" value={form.quoted_price} onChange={e=>setForm({...form,quoted_price:e.target.value,final_price:String(Math.max(0,Number(e.target.value||0)-Number(form.discount||0)))})}/></Field><Field label="Discount (RM)"><input type="number" min="0" step="0.01" value={form.discount} onChange={e=>setForm({...form,discount:e.target.value,final_price:String(Math.max(0,Number(form.quoted_price||0)-Number(e.target.value||0)))})}/></Field>
       <Field label="Final price (RM)"><input type="number" min="0" step="0.01" value={form.final_price} onChange={e=>setForm({...form,final_price:e.target.value})}/></Field><Field label="Deposit (RM)"><input type="number" min="0" step="0.01" value={form.deposit_amount} onChange={e=>setForm({...form,deposit_amount:e.target.value})}/></Field>
       <Field label="Deposit payment"><div className="dual-input"><select value={form.payment_method} onChange={e=>setForm({...form,payment_method:e.target.value})}>{['Cash','Bank Transfer','DuitNow QR','Card','Other'].map(x=><option key={x}>{x}</option>)}</select><select value={form.payment_status} onChange={e=>setForm({...form,payment_status:e.target.value})}><option value="paid">Paid</option><option value="outstanding">Outstanding</option></select></div></Field><Field label="Deal notes"><textarea value={form.deal_notes} onChange={e=>setForm({...form,deal_notes:e.target.value})}/></Field>

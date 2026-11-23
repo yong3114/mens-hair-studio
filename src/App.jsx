@@ -3,6 +3,7 @@ import { supabase, configured } from './lib/supabase'
 import { getProfile } from './lib/api'
 import { isConsultationType } from './lib/calendar'
 import Layout from './components/Layout'
+import Members from './pages/Members'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
@@ -32,6 +33,7 @@ export default function App(){
  useEffect(()=>{if(!window.history.state?.hairStudio)window.history.replaceState(initialHistoryState,'');const onPop=e=>{const s=e.state?.hairStudio?e.state:initialHistoryState;setPage(s.page||'dashboard');setCustomerId(s.customerId||null);setPortalCustomerId(s.portalCustomerId||null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[])
  useEffect(()=>{requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},[page,customerId,portalCustomerId])
 
+ if(new URLSearchParams(window.location.search).has("member"))return <Members/>
  if(loading)return <div className="app-loading">Loading...</div>
  if(!session)return <Login/>
 

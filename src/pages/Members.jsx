@@ -1,3 +1,5 @@
+import {MemberLogin} from './MemberLogin'
+export {MemberAccess} from './MemberLogin'
 import React,{useCallback,useEffect,useRef,useState} from 'react'
 import {supabase} from '../lib/supabase'
 import {CalendarDays, Scissors, Wallet, Home, CreditCard, WalletCards, ChevronRight, UserRound} from 'lucide-react'
@@ -14,16 +16,9 @@ async function call(name,args){
 const displayTime=value=>new Date(value).toLocaleString('en-MY',{timeZone:'Asia/Kuala_Lumpur',dateStyle:'medium',timeStyle:'short'})
 const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Kuala_Lumpur'}).format(new Date())
 const storageKey='studio-member-access'
-export function MemberAccess({id}){
- const [code,setCode]=useState(''),[error,setError]=useState('')
- async function issue(){
-  if(!window.confirm('Issue a new member code? Any previous code for this client will stop working.'))return
-  try{setCode(await call('member_issue',{p_customer:id}));setError('')}catch(e){setError(e.message)}
- }
- return <div><button className="btn btn-ghost" onClick={issue}>Issue member login</button>{code&&<label className="field">Private member code<input readOnly value={code} onFocus={e=>e.target.select()}/></label>}{error&&<p role="alert">{error}</p>}</div>
-}
 export default function Members({previewId,onExit,onRecords}){
- const [key,setKey]=useState(()=>previewId?'':sessionStorage.getItem(storageKey)||''),[input,setInput]=useState(''),[data,setData]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false)
+ const [ticket,setTicket]=useState(()=>previewId?'':new URLSearchParams(window.location.hash.slice(1)).get('setup')||'')
+ const [key,setKey]=useState(()=>previewId||ticket?'':sessionStorage.getItem(storageKey)||''),[data,setData]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false)
  const [page,setPage]=useState('home')
  const lock=useRef(false),request=useRef(null),readVersion=useRef(0)
  const [syncError,setSyncError]=useState('')
@@ -47,9 +42,6 @@ export default function Members({previewId,onExit,onRecords}){
   return()=>{++readVersion.current;window.removeEventListener('focus',poll);clearInterval(timer)}
  },[key,previewId,refresh])
  function navigate(next){setPage(next);setMessage('');setError('');window.scrollTo(0,0)}
- async function login(e){e.preventDefault();setBusy(true);setError('')
-  try{const k=input.trim();const result=await call('member_home',{p_key:k});sessionStorage.setItem(storageKey,k);setData(result);setKey(k);setInput('')}catch(err){setError(err.message)}finally{setBusy(false)}
- }
  async function act(id){
   if(previewId||syncError||lock.current)return
   const item=data.offers.find(entry=>entry.id===id)
@@ -63,9 +55,9 @@ export default function Members({previewId,onExit,onRecords}){
   }catch(e){setError(e.message)}finally{try{await refresh()}catch(e){setError(e.message)}lock.current=false;setBusy(false)}
  }
  if((previewId||key)&&!data)return <div className="portal-main">{previewId&&<button className="btn btn-ghost" onClick={onExit}>Back to client</button>}<p role="status">{syncError||"Loading member view…"}</p>{syncError&&<button className="btn btn-ghost" onClick={refresh}>Retry</button>}</div>
- if((!previewId&&!key)||!data)return <div className="login-shell member-entry"><form className="login-card" onSubmit={login}><div className="member-symbol"><Scissors size={28}/></div><h1>Member login</h1><label className="field">Private member code<input required type="password" autoComplete="current-password" value={input} onChange={e=>setInput(e.target.value)}/></label><small>Your studio can issue or replace your code.</small>{error&&<p role="alert">{error}</p>}<button className="btn btn-primary" disabled={busy}>Sign in</button><a href={window.location.pathname}>Staff login</a></form></div>
+ if((!previewId&&!key)||!data)return <MemberLogin ticket={ticket} onExitSetup={()=>{sessionStorage.removeItem(storageKey);setTicket('')}} onComplete={(k,result)=>{sessionStorage.setItem(storageKey,k);setError('');setData(result);setKey(k)}}/>
  const c=data.profile||{},upcoming=data.visits[0],systems=data.systems
- return <div className="portal-shell member-layout"><header className="portal-preview-bar"><strong>{previewId?'Customer view · Read only':'Member account'}</strong>{previewId?<div><button className="btn btn-ghost" onClick={onRecords}>Client records</button> <button className="btn btn-ghost" onClick={onExit}>Back to client</button></div>:<button className="btn btn-ghost" onClick={()=>{sessionStorage.removeItem(storageKey);setKey('');setData(null);setPage('home');setMessage('');setError('')}}>Sign out</button>}</header><main className="portal-main">{syncError&&<div role="alert" className="notice"><span>{syncError}</span> <button className="btn btn-ghost" onClick={refresh}>Retry</button></div>}
+ return <div className="portal-shell member-layout"><header className="portal-preview-bar"><strong>{previewId?'Customer view · Read only':'Member account'}</strong>{previewId?<div><button className="btn btn-ghost" onClick={onRecords}>Client records</button> <button className="btn btn-ghost" onClick={onExit}>Back to client</button></div>:<button className="btn btn-ghost" onClick={async()=>{try{await call('member_end_session',{p_key:key})}catch{setError('Unable to sign out. Check your connection and retry.');return}sessionStorage.removeItem(storageKey);setKey('');setData(null);setPage('home');setMessage('');setError('')}}>Sign out</button>}</header><main className="portal-main">{syncError&&<div role="alert" className="notice"><span>{syncError}</span> <button className="btn btn-ghost" onClick={refresh}>Retry</button></div>}
  {page==='home'&&<><section className="portal-hero"><span className="portal-kicker">MY HAIR STUDIO</span><h1>Hi, {data.name}</h1></section>
        {upcoming?<section className="portal-next-card"><div className="portal-card-icon"><CalendarDays size={22}/></div><div className="grow"><span className="portal-label">NEXT APPOINTMENT</span><h2>{upcoming.service}</h2><p>{displayTime(upcoming.starts)}</p></div><Badge tone={upcoming.status==='confirmed'?'success':'neutral'}>{upcoming.status.replace('_',' ')}</Badge></section>:<section className="portal-empty-card"><CalendarDays size={22}/><div><strong>No upcoming appointment</strong><span>Your next booking will appear here.</span></div></section>}
        <div className="portal-actions"><button onClick={()=>navigate('booking')}><CalendarDays size={19}/><span><strong>Request a visit</strong><small>Arrange a time with the studio</small></span><ChevronRight size={18}/></button></div>

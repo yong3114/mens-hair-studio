@@ -74,7 +74,7 @@ export default function Members({previewId,onExit,onRecords}){
  {page==='wallet'&&<><section className="portal-section"><h2>Redeem rewards</h2><p>Earn 1 point for every RM1 paid after refunds.</p>{data.offers.length?data.offers.map(o=><p key={o.id}><button className="btn btn-ghost" disabled={busy||!!syncError||!!previewId||data.points<o.cost} onClick={()=>act(o.id)}>{o.title} · {o.cost} points</button>{data.points<o.cost&&<small className="member-needed">{o.cost-data.points} more points needed</small>}</p>):<p>No vouchers on offer yet.</p>}</section>
  <section className="portal-section"><h2>My vouchers</h2>{data.vouchers.length?data.vouchers.map(v=><p key={v.id}><strong>{v.title}</strong> · {v.used?'Used':'Available'}{!v.used&&<small style={{display:'block',overflowWrap:'anywhere'}}>{v.id}</small>}</p>):<p>No vouchers redeemed yet.</p>}</section></>}</main><nav className="portal-bottom-nav" aria-label="Member menu">{[['home','Home',Home],['booking','Visits',CalendarDays],['wallet','Account',Wallet]].map(([id,label,Icon])=><button key={id} aria-current={page===id?"page":undefined} className={page===id?'active':''} onClick={()=>navigate(id)}><Icon size={20}/><span>{label}</span></button>)}</nav></div>
 }
-export function MemberSettings(){
+export function MemberSettings({isAdmin}){
  const [data,setData]=useState({offers:[],slots:[]}),[error,setError]=useState(''),[busy,setBusy]=useState(false)
  async function manage(action,payload){
   setBusy(true);setError('')
@@ -83,7 +83,7 @@ export function MemberSettings(){
  useEffect(()=>{manage('list',{})},[])
  function submit(action){return e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));if(values.starts)values.starts+=':00+08:00';manage(action,values)}}
  return <section className="panel"><h2>Member rewards</h2>{error&&<p role="alert">{error}</p>}
- <form className="form-grid" onSubmit={submit('offer')}><label className="field">Voucher name<input name="title" required maxLength="100" placeholder="e.g. RM10 maintenance voucher"/></label><label className="field">Points required<input required name="cost" min="1" type="number"/></label><button disabled={busy} className="btn btn-primary">Publish voucher</button></form>
- {data.offers.map(o=><p key={o.id}>{o.title} · {o.cost} points <button disabled={busy} onClick={()=>manage('close_offer',{id:o.id})}>Withdraw</button></p>)}
+ {isAdmin&&<form className="form-grid" onSubmit={submit('offer')}><label className="field">Voucher name<input name="title" required maxLength="100" placeholder="e.g. RM10 maintenance voucher"/></label><label className="field">Points required<input required name="cost" min="1" type="number"/></label><button disabled={busy} className="btn btn-primary">Publish voucher</button></form>}
+ {data.offers.map(o=><p key={o.id}>{o.title} · {o.cost} points {isAdmin&&<button disabled={busy} onClick={()=>manage('close_offer',{id:o.id})}>Withdraw</button>}</p>)}
  <form className="form-grid" onSubmit={submit('use')}><label className="field">Customer voucher code<input name="id" required/></label><button disabled={busy} className="btn btn-ghost">Mark voucher used</button></form></section>
 }

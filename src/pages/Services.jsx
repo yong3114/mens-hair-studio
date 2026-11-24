@@ -2,11 +2,12 @@ import React,{useEffect,useMemo,useState} from 'react'
 import { Plus, Play, CheckCircle2, Clock3, CalendarPlus, Camera, UserRound, ChevronRight, RotateCcw, Ban } from 'lucide-react'
 import { listAppointments,listCustomers,listProfiles,listConsumables,listServices,saveAppointment,startService,completeService,resetAppointmentWorkflow } from '../lib/api'
 import { Badge, Empty, Field, Modal, Tabs } from '../components/UI'
+import { studioDay,studioTime } from '../lib/utils'
 import { appointmentBlank, formToAppointment, serviceDurations, serviceTypes, isConsultationType } from '../lib/calendar'
 import { addDays, customerLabel, dateTime, localDateKey, localTimeValue, money, shortDate } from '../lib/utils'
 
 const completeBlank={amount:'',next_maintenance_date:'',technical_notes:'',customer_notes:'',payment_method:'DuitNow QR',payment_status:'paid'}
-const walkBlank=()=>({...appointmentBlank(new Date()),service_type:'Maintenance',duration_min:90,date:localDateKey(new Date()),time:localTimeValue(new Date()),status:'in_progress'})
+const walkBlank=()=>({...appointmentBlank(new Date()),service_type:'Maintenance',duration_min:90,date:studioDay(),time:studioTime(new Date()),status:'in_progress'})
 
 export default function Services({prefill,onDone,onViewCustomer,onBook,onAddMedia}){
  const [customers,setCustomers]=useState([]),[profiles,setProfiles]=useState([]),[cons,setCons]=useState([]),[appts,setAppts]=useState([]),[services,setServices]=useState([]),[tab,setTab]=useState('today')
@@ -14,10 +15,10 @@ export default function Services({prefill,onDone,onViewCustomer,onBook,onAddMedi
  const load=async()=>{const start=addDays(new Date(),-7);start.setHours(0,0,0,0);const end=addDays(new Date(),45);const[c,p,co,a,s]=await Promise.all([listCustomers(),listProfiles(),listConsumables(),listAppointments(start.toISOString(),end.toISOString()),listServices()]);setCustomers(c);setProfiles(p);setCons(co);setAppts(a);setServices(s)}
  useEffect(()=>{load()},[])
  useEffect(()=>{if(!prefill)return;const a=prefill.appointment || ((prefill.id&&prefill.scheduled_at)?prefill:null);const c=prefill.customer || (!a?prefill:null);if(a)prepareAppointment(a);else if(c)prepareWalkIn(c)},[prefill?.appointment?.id,prefill?.id])
- const today=localDateKey(new Date())
+ const today=studioDay()
  const inProgress=services.filter(s=>s.status==='in_progress')
- const todays=appts.filter(a=>!isConsultationType(a.service_type)&&a.customer_id&&localDateKey(a.scheduled_at)===today&&!['completed','cancelled','no-show'].includes(a.status)).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at))
- const upcoming=appts.filter(a=>!isConsultationType(a.service_type)&&a.customer_id&&localDateKey(a.scheduled_at)>today&&!['completed','cancelled','no-show'].includes(a.status)).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at)).slice(0,50)
+ const todays=appts.filter(a=>!isConsultationType(a.service_type)&&a.customer_id&&studioDay(a.scheduled_at)===today&&!['completed','cancelled','no-show'].includes(a.status)).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at))
+ const upcoming=appts.filter(a=>!isConsultationType(a.service_type)&&a.customer_id&&studioDay(a.scheduled_at)>today&&!['completed','cancelled','no-show'].includes(a.status)).sort((a,b)=>new Date(a.scheduled_at)-new Date(b.scheduled_at)).slice(0,50)
  const history=services.filter(s=>s.status==='completed').slice(0,120)
  const maintenanceDue=useMemo(()=>{const latest=new Map();services.filter(s=>s.status==='completed'&&s.customer_id).sort((a,b)=>new Date(b.completed_at||b.created_at)-new Date(a.completed_at||a.created_at)).forEach(s=>{if(!latest.has(s.customer_id))latest.set(s.customer_id,s)});return [...latest.values()].filter(s=>s.next_maintenance_date&&s.next_maintenance_date<=today).sort((a,b)=>String(a.next_maintenance_date).localeCompare(String(b.next_maintenance_date)))},[services,today])
  const byAppointment=useMemo(()=>{const map={};services.filter(s=>s.appointment_id).forEach(s=>{if(!map[s.appointment_id])map[s.appointment_id]=s});return map},[services])
@@ -27,7 +28,7 @@ export default function Services({prefill,onDone,onViewCustomer,onBook,onAddMedi
  const sid=await startService({customer_id:customerId,appointment_id:appointmentId,service_type:serviceType,technician_id:technicianId,started_at:startedAt});await load();const fresh=(await listServices()).find(s=>s.id===sid);setStartOpen(false);openSession(fresh||{id:sid,customer_id:customerId,appointment_id:appointmentId,service_type:serviceType,technician_id:technicianId,started_at:startedAt,status:'in_progress'});onDone?.()}catch(e){setError(e.message)}finally{setBusy(false)}}
  function openSession(s){setActive(s);setCompleteForm({...completeBlank,amount:s.amount||'',next_maintenance_date:s.next_maintenance_date||'',technical_notes:s.technical_notes||'',customer_notes:s.customer_notes||''});setUsed([]);setError('');setSessionOpen(true)}
  const addUse=()=>setUsed([...used,{consumable_id:'',qty:1}])
- const setMaintenanceWeeks=w=>setCompleteForm({...completeForm,next_maintenance_date:localDateKey(addDays(new Date(),w*7))})
+ const setMaintenanceWeeks=w=>setCompleteForm({...completeForm,next_maintenance_date:studioDay(addDays(new Date(),w*7))})
  async function finish(e){e.preventDefault();setBusy(true);setError('');try{const payload={service_id:active.id,customer_id:active.customer_id,appointment_id:active.appointment_id||'',service_type:active.service_type,technician_id:active.technician_id||'',amount:Number(completeForm.amount||0),completed_at:new Date().toISOString(),next_maintenance_date:completeForm.next_maintenance_date||null,technical_notes:completeForm.technical_notes,customer_notes:completeForm.customer_notes,payment_method:completeForm.payment_method,payment_status:completeForm.payment_status};const sid=await completeService(payload,used.filter(x=>x.consumable_id&&Number(x.qty)>0).map(x=>({...x,qty:Number(x.qty)})));setSessionOpen(false);setSuccess({...payload,service_id:sid});await load();onDone?.()}catch(e){setError(e.message)}finally{setBusy(false)}}
  async function changeActiveStatus(target){if(!active?.appointment_id){setError('This active service is not linked to a booking.');return}const text=target==='confirmed'?'return this service to Booked':'cancel this service';if(!confirm(`Are you sure you want to ${text}?`))return;setBusy(true);setError('');try{await resetAppointmentWorkflow(active.appointment_id,target);setSessionOpen(false);setActive(null);await load();onDone?.()}catch(e){setError(e.message||'Could not change service status.')}finally{setBusy(false)}}
  return <div className="page service-page"><div className="page-head"><div><span className="eyebrow">SERVICE QUEUE</span><h1>Service</h1><p>Calendar = booking. Service = the actual work done for that booking.</p></div><button className="btn btn-primary" onClick={()=>prepareWalkIn()}><Plus size={18}/>Walk-in service</button></div>

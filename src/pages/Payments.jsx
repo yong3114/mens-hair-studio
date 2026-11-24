@@ -7,9 +7,11 @@ import { customerLabel,money,shortDate } from '../lib/utils'
 export default function Payments(){
  const[rows,setRows]=useState([]),[customers,setCustomers]=useState([]),[q,setQ]=useState(''),[open,setOpen]=useState(false),[tab,setTab]=useState('all'),[form,setForm]=useState({customer_id:'',type:'sale',method:'DuitNow QR',status:'paid',amount:'',reference:'',notes:''})
  const [selected,setSelected]=useState(null)
- const load=async()=>{setRows(await listPayments());setCustomers(await listCustomers())};useEffect(()=>{load()},[])
+ const [ready,setReady]=useState(false),[loadError,setLoadError]=useState('')
+ const load=async()=>{try{const [payments,clients]=await Promise.all([listPayments(),listCustomers()]);setRows(payments);setCustomers(clients);setReady(true);setLoadError('')}catch(e){setLoadError(e.message)}};useEffect(()=>{load()},[])
  const filtered=useMemo(()=>rows.filter(x=>(tab==='all'||(tab==='refund'?x.type==='refund':x.status===tab))&&`${customerLabel(x.customers)} ${x.type} ${x.method} ${x.status} ${x.reference||''}`.toLowerCase().includes(q.toLowerCase())),[rows,q,tab])
  const paid=rows.filter(x=>x.status==='paid'&&x.type!=='refund').reduce((a,x)=>a+Number(x.amount||0),0);const due=rows.filter(x=>x.status==='outstanding').reduce((a,x)=>a+Number(x.amount||0),0);const refunds=rows.filter(x=>x.type==='refund').reduce((a,x)=>a+Number(x.amount||0),0)
+ if(!ready||loadError)return <section className="page"><h1>Payments</h1><p role="status">{loadError||"Loading payments…"}</p>{loadError&&<button className="btn btn-ghost" onClick={load}>Retry</button>}</section>
  return <div className="page"><div className="page-head"><div><span className="eyebrow">MONEY</span><h1>Payments</h1><p>Keep paid, outstanding, deposits and refunds easy to read.</p></div><button className="btn btn-primary" onClick={()=>setOpen(true)}><Plus size={18}/>Add payment</button></div>
  <div className="stats-grid compact"><Stat label="Total paid" value={money(paid)}/><Stat label="Outstanding" value={money(due)} tone={due?'warn':'default'}/><Stat label="Refunds" value={money(refunds)}/><Stat label="Transactions" value={rows.length}/></div>
  <div className="payment-toolbar"><Tabs value={tab} onChange={setTab} items={[{value:'all',label:'All'},{value:'outstanding',label:'Outstanding'},{value:'paid',label:'Paid'},{value:'refund',label:'Refunds'}]}/><div className="search"><Search size={17}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search customer, method, reference..."/></div></div>

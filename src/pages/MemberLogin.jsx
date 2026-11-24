@@ -25,8 +25,8 @@ export function MemberAccess({id}){
  <button className="btn btn-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(issued.url);setCopied(true)}catch{setError('Select and copy the link above.')}}}>{copied?'Copied':'Copy link'}</button></div>}
  {error&&<p role="alert">{error}</p>}</div>
 }
-export function MemberLogin({ticket,onComplete,onExitSetup}){
- const [mode,setMode]=useState('phone'),[country,setCountry]=useState('60'),[phone,setPhone]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[code,setCode]=useState(''),[error,setError]=useState(''),[status,setStatus]=useState(''),[busy,setBusy]=useState(false)
+export function MemberLogin({initialNotice,ticket,onComplete,onExitSetup}){
+ const [mode,setMode]=useState('phone'),[country,setCountry]=useState('60'),[phone,setPhone]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[code,setCode]=useState(''),[error,setError]=useState(''),[status,setStatus]=useState(initialNotice||''),[busy,setBusy]=useState(false)
  const setup=!!ticket,legacy=!setup&&mode==='code'
  useEffect(()=>{if(setup)window.history.replaceState(null,'',window.location.pathname+window.location.search)},[setup])
  async function submit(e){

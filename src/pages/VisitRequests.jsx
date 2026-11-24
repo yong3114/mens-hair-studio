@@ -56,7 +56,7 @@ export function RequestVisit({data,memberKey,disabled,refresh}){
  return <>
  {data.requests?.length>0&&<section className="portal-section"><h2>Pending confirmation</h2>{data.requests.map(r=><article key={r.id}><strong>{r.service}</strong><p>{display(r.preferred)} MYT · {ride(r.passengers)}</p>{data.contact&&memberKey&&<a className="btn btn-ghost" href={whatsappLink(data.contact,data.name,r)}>Continue in WhatsApp</a>}</article>)}</section>}
  <section className="portal-section"><h2>Request a visit</h2><p>Choose your preferred time in Malaysia. Your visit is booked once the studio confirms it.</p>
- <form className="form-grid" onSubmit={submit}><fieldset disabled={disabled||busy||!data.contact} style={{display:'grid',gap:12,border:0,padding:0,minWidth:0}}>
+ <form className="form-grid" onSubmit={submit}><fieldset className="member-visit-fields" disabled={disabled||busy||!data.contact} style={{display:'grid',gap:12,border:0,padding:0,minWidth:0}}>
  <strong>{data.name}</strong>
  <label className="field">Service<select name="service">{services.map(x=><option key={x}>{x}</option>)}</select></label>
  <VisitTime key={"preferred"+formVersion} name="preferred" title="Preferred date (MYT)"/>

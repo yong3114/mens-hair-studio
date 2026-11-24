@@ -11,3 +11,9 @@
 .member-layout .portal-bottom-nav{grid-template-columns:repeat(3,1fr)}
 .member-layout :focus-visible{outline:3px solid #6e855f;outline-offset:2px}
 @media(max-width:640px){.member-layout .portal-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.member-layout .portal-main{padding-bottom:calc(100px + env(safe-area-inset-bottom))}.member-layout .portal-preview-bar{flex-wrap:wrap}}
+.member-layout .member-visit-fields{grid-column:1/-1}
+.member-layout .pending-visit{width:100%;text-align:left;background:#f7efdd;color:#503d21;cursor:pointer}
+.member-layout .pending-visit span{display:grid;gap:4px;flex:1}
+.member-layout .pending-visit small{font-size:14px}
+.member-layout .portal-section article+article{border-top:1px solid #e5e4dc;margin-top:12px;padding-top:12px}
+.member-layout .portal-profile+div .btn{margin:8px 8px 0 0}

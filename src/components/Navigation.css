@@ -1,0 +1,9 @@
+.app-shell :is(button,input,select,textarea,a):focus-visible,.portal-shell :is(button,input,select,textarea,a):focus-visible{
+ outline:3px solid #48755f;outline-offset:3px
+}
+.sidebar nav button[aria-current=page]{box-shadow:inset 3px 0 #95ba9e}
+@media(max-width:820px){
+ .mobile-more-grid button,.bottom-nav button,.form-actions .btn{min-height:44px}
+ .mobile-more{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+ .page-head h1,.portal-hero h1{overflow-wrap:anywhere}
+}

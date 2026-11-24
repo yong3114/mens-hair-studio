@@ -4,7 +4,7 @@ import { ArrowLeft, MessageCircle, CalendarPlus, Scissors, Pencil, MapPin, Plus,
 import { getCustomer, saveCustomer, createPayment, createCredit, uploadMedia, signedMedia, deleteTestCustomer } from '../lib/api'
 import { Badge, Field, Modal, Stat, Tabs, Empty } from '../components/UI'
 import PlaceAutocomplete from '../components/PlaceAutocomplete'
-import { customerLabel, initials, money, shortDate, dateTime, mapsUrl, wazeUrl, localDateKey } from '../lib/utils'
+import { studioDay, customerLabel, initials, money, shortDate, dateTime, mapsUrl, wazeUrl, localDateKey } from '../lib/utils'
 import { isConsultationType } from '../lib/calendar'
 
 export default function CustomerDetail({id,onBack,onBook,onService,onAppointmentAction,onPreviewPortal,onDeleted}){

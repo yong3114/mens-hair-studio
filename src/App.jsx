@@ -29,7 +29,7 @@ export default function App(){
  const[appointmentPrefill,setAppointmentPrefill]=useState(null),[servicePrefill,setServicePrefill]=useState(null),[salesPrefill,setSalesPrefill]=useState(null),[mediaPrefill,setMediaPrefill]=useState(null)
 
  useEffect(()=>{if(!configured){setLoading(false);return} supabase.auth.getSession().then(({data})=>{setSession(data.session);setLoading(false)});const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[])
- useEffect(()=>{if(session?.user?.id)getProfile(session.user.id).then(setProfile).catch(()=>setProfile({id:session.user.id,full_name:session.user.email?.split('@')[0],role:'admin'}));else setProfile(null)},[session?.user?.id])
+ useEffect(()=>{if(session?.user?.id)getProfile(session.user.id).then(setProfile).catch(()=>setProfile({id:session.user.id,full_name:session.user.email?.split('@')[0],role:null}));else setProfile(null)},[session?.user?.id])
  useEffect(()=>{if(!window.history.state?.hairStudio)window.history.replaceState(initialHistoryState,'');const onPop=e=>{const s=e.state?.hairStudio?e.state:initialHistoryState;setPage(s.page||'dashboard');setCustomerId(s.customerId||null);setPortalCustomerId(s.portalCustomerId||null);setAppointmentPrefill(null);setServicePrefill(null);setSalesPrefill(null);setMediaPrefill(null);requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))};window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[])
  useEffect(()=>{requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))},[page,customerId,portalCustomerId])
 

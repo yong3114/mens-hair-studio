@@ -1,10 +1,13 @@
 export const studioZone = 'Asia/Kuala_Lumpur'
 const studioDayFormatter = new Intl.DateTimeFormat('sv-SE', {timeZone:studioZone,year:'numeric',month:'2-digit',day:'2-digit'})
 export const studioDay = (instant=new Date()) => studioDayFormatter.format(new Date(instant))
+export const studioTime = value => new Intl.DateTimeFormat('en-GB',{timeZone:studioZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value))
+export const studioDateCursor = (value=new Date()) => new Date(studioDay(value)+'T12:00:00')
+export const studioInstant = (day,time='00:00') => new Date(day+'T'+time+':00+08:00')
 export const money = (v) => new Intl.NumberFormat('en-MY', { style:'currency', currency:'MYR', maximumFractionDigits:2 }).format(Number(v || 0))
-export const shortDate = (v) => v ? new Intl.DateTimeFormat('en-MY', { day:'2-digit', month:'short', year:'numeric' }).format(new Date(v)) : '—'
-export const dateTime = (v) => v ? new Intl.DateTimeFormat('en-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(v)) : '—'
-export const timeOnly = (v) => v ? new Intl.DateTimeFormat('en-MY', { hour:'2-digit', minute:'2-digit' }).format(new Date(v)) : '—'
+export const shortDate = (v) => v ? new Intl.DateTimeFormat('en-MY', { timeZone:studioZone, day:'2-digit', month:'short', year:'numeric' }).format(new Date(v)) : '—'
+export const dateTime = (v) => v ? new Intl.DateTimeFormat('en-MY', { timeZone:studioZone, day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(v)) : '—'
+export const timeOnly = (v) => v ? new Intl.DateTimeFormat('en-MY', { timeZone:studioZone, hour:'2-digit', minute:'2-digit' }).format(new Date(v)) : '—'
 export const classNames = (...xs) => xs.filter(Boolean).join(' ')
 
 export const localDateKey = (value = new Date()) => {

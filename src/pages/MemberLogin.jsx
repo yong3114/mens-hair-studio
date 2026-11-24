@@ -49,8 +49,8 @@ export function MemberLogin({ticket,onComplete,onExitSetup}){
  {legacy?<label className="field">Private member code<input autoComplete="off" type="password" required value={code} onChange={e=>setCode(e.target.value)}/></label>:<>
  <label className="field">Country<select value={country} onChange={e=>setCountry(e.target.value)}><option value="60">Malaysia (+60)</option><option value="65">Singapore (+65)</option></select></label>
  <label className="field">Mobile number<input required type="tel" autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
- <label className="field">{setup?'New password':'Password'}<input type="password" required minLength={setup?15:undefined} autoComplete={setup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)}/></label>
- {setup&&<><small>Use at least 15 characters. A phrase is easy to remember.</small><label className="field">Confirm password<input type="password" required autoComplete="new-password" value={repeat} onChange={e=>setRepeat(e.target.value)}/></label></>}</>}
+ <label className="field">{setup?'New password':'Password'}<input type="password" required minLength={setup?6:undefined} autoComplete={setup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)}/></label>
+ {setup&&<><small>Use at least 6 characters. Letters or numbers are fine.</small><label className="field">Confirm password<input type="password" required autoComplete="new-password" value={repeat} onChange={e=>setRepeat(e.target.value)}/></label></>}</>}
  {status&&<p role="status">{status}</p>}{error&&<p role="alert">{error}</p>}
  <button className="btn btn-primary" disabled={busy}>{setup?'Save password':'Sign in'}</button>
  {!setup&&<><button type="button" className="btn btn-ghost" onClick={()=>{setMode(legacy?'phone':'code');setError('');setStatus('')}}>{legacy?'Use mobile and password':'Use existing member code'}</button>

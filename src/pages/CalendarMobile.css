@@ -21,3 +21,5 @@
  .calendar-page .agenda-items .badge{grid-column:2;justify-self:start;margin-left:0}
  .calendar-page .agenda-items .grow{min-width:0;overflow-wrap:anywhere}
 }
+.booking-schedule-pair{display:grid;grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.booking-schedule-pair .field,.booking-schedule-pair input{min-width:0;max-width:100%}

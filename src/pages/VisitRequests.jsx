@@ -43,6 +43,14 @@ export function RequestVisit({data,memberKey,disabled,refresh}){
   if(lock.current||disabled)return
   const form=e.currentTarget,values=Object.fromEntries(new FormData(form))
   const r={preferred:requestedTime(values,'preferred'),alternative:requestedTime(values,'alternative'),service:values.service,passengers:pickup?Number(values.passengers):0,note:values.note.trim()}
+  if(Date.parse(r.preferred)<=Date.now()||(r.alternative&&Date.parse(r.alternative)<=Date.now())){
+   setError('Choose a future date and time in Malaysia.')
+   return
+  }
+  if(r.preferred===r.alternative){
+   setError('Choose a different alternative time, or leave the alternative date blank.')
+   return
+  }
   const signature=JSON.stringify(r)
   if(attempt.current?.signature!==signature)attempt.current={signature,token:crypto.randomUUID()}
   lock.current=true;setBusy(true);setError('')

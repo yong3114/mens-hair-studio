@@ -1,7 +1,7 @@
 import './CalendarMobile.css'
 import React,{useEffect,useMemo,useRef,useState} from 'react'
 import { Plus, ChevronLeft, ChevronRight, MapPin, GripVertical, Play, Trash2, RotateCcw, Ban, Search, X } from 'lucide-react'
-import { listAppointments, listCustomers, listLeads, listProfiles, saveAppointment, saveLead, deleteAppointment, resetAppointmentWorkflow } from '../lib/api'
+import { listAppointments, listCustomers, listLeads, listProfiles, saveAppointment, deleteAppointment, resetAppointmentWorkflow } from '../lib/api'
 import { Badge, Empty, Field, Drawer, Modal, Tabs } from '../components/UI'
 import {VisitInbox} from './VisitRequests'
 import PlaceAutocomplete from '../components/PlaceAutocomplete'
@@ -34,6 +34,23 @@ function BookingPersonPicker({consultation,leadId,customerId,leads,customers,onS
  </div>
 }
 
+function BookingDuration({value,onChange,start,date}){
+ const presets=[30,45,60,90,120,180]
+ const end=new Date(studioInstant(date,start).getTime()+Number(value)*60000)
+ const showEnd=Number(value)>0&&Number.isFinite(end.getTime())
+ const [custom,setCustom]=useState(()=>!presets.includes(Number(value)))
+ return <div className="field">
+  <label className="field-label" htmlFor="booking-duration">Duration</label>
+  <select id="booking-duration" value={custom?'custom':value} onChange={e=>{
+   const other=e.target.value==='custom'
+   setCustom(other)
+   if(!other)onChange(Number(e.target.value))
+  }}>{presets.map(minutes=><option key={minutes} value={minutes}>{minutes} minutes</option>)}<option value="custom">Custom duration</option></select>
+  {custom&&<input aria-label="Custom duration in minutes" type="number" inputMode="numeric" min="15" step="15" required value={value} onChange={e=>onChange(e.target.value)}/>}
+  {showEnd&&<small>Ends at {timeOnly(end)}{studioDay(end)!==date?' · '+studioDay(end):''} MYT</small>}
+ </div>
+}
+
 export default function Appointments({isAdmin,prefill,onStartService,onStartConsultation}){
  const[view,setView]=useState(()=>window.innerWidth<820?'day':'month'),[cursor,setCursor]=useState(()=>studioDateCursor()),[rows,setRows]=useState([]),[customers,setCustomers]=useState([]),[leads,setLeads]=useState([]),[profiles,setProfiles]=useState([])
  const[open,setOpen]=useState(false),[form,setForm]=useState(appointmentBlank()),[editing,setEditing]=useState(null),[selectedMap,setSelectedMap]=useState(null),[error,setError]=useState(''),[assignee,setAssignee]=useState('all'),[notice,setNotice]=useState(''),[statusBusy,setStatusBusy]=useState(false)
@@ -45,6 +62,9 @@ export default function Appointments({isAdmin,prefill,onStartService,onStartCons
   return ()=>media.removeEventListener('change',resize)
  },[])
  const request=useRef(0)
+ const saveLock=useRef(false),errorBox=useRef(null)
+ const [saving,setSaving]=useState(false)
+ useEffect(()=>{if(error)errorBox.current?.focus()},[error])
  const queryView=['agenda','map'].includes(view)?'month':view
  const load=async()=>{const version=++request.current;const[start,end]=rangeForView(queryView,cursor);const[a,c,l,p]=await Promise.all([listAppointments(start.toISOString(),end.toISOString()),listCustomers(),listLeads(),listProfiles()]);if(version!==request.current)return;setRows(a);setCustomers(c);setLeads(l);setProfiles(p)}
  useEffect(()=>{
@@ -69,11 +89,33 @@ export default function Appointments({isAdmin,prefill,onStartService,onStartCons
  const rangeDays = queryView==='day' ? [cursor] : queryView==='week' ? weekDays(cursor) : monthCells(cursor)
  const firstDay=localDateKey(rangeDays[0]), lastDay=localDateKey(rangeDays[rangeDays.length-1])
  const reminders=leads.filter(lead=>!['lost','signed'].includes(lead.stage) && lead.follow_up_date>=firstDay && lead.follow_up_date<=lastDay).sort((a,b)=>a.follow_up_date.localeCompare(b.follow_up_date)||leadLabel(a).localeCompare(leadLabel(b)))
- const openNew=(date=studioDateCursor(),time='10:00')=>{const f=appointmentBlank(date);f.date=localDateKey(date);f.time=time;setForm(f);setEditing(null);setError('');setOpen(true)}
+ const openNew=(date=studioDateCursor(),time='10:00')=>{const f=appointmentBlank(date);f.date=localDateKey(date);f.time=time;f.assigned_user_id=assignee==='all'?'':assignee;setForm(f);setEditing(null);setError('');setOpen(true)}
  function openForPrefill(p){const f=appointmentBlank();f.service_type=p.service_type||(p.kind==='lead'?'Studio Consultation':p.record?.lifecycle_stage==='signed'?'New System Installation':'Maintenance');f.duration_min=serviceDurations[f.service_type]||60;if(p.kind==='lead'){f.lead_id=p.record.id;f.customer_id='';if(f.service_type==='Free Home Consultation'){f.location_type='home';f.travel_buffer_before=30;f.travel_buffer_after=30}}else{f.customer_id=p.record.id;f.lead_id='';Object.assign(f,{address:p.record.address||'',place_name:p.record.place_name||'',google_place_id:p.record.google_place_id||'',lat:p.record.lat||null,lng:p.record.lng||null,google_maps_url:p.record.google_maps_url||''})}setForm(f);setEditing(null);setError('');setOpen(true)}
  const selectCustomer=id=>{const c=customers.find(x=>x.id===id);setForm({...form,customer_id:id,lead_id:'',address:c?.address||'',place_name:c?.place_name||'',google_place_id:c?.google_place_id||'',lat:c?.lat||null,lng:c?.lng||null,google_maps_url:c?.google_maps_url||''})}
  const selectConsultPerson=value=>{const[kind,id]=value.split(':');if(kind==='lead'){setForm({...form,lead_id:id,customer_id:'',address:'',place_name:'',google_place_id:'',lat:null,lng:null,google_maps_url:''})}else{const c=customers.find(x=>x.id===id);setForm({...form,customer_id:id,lead_id:'',address:c?.address||'',place_name:c?.place_name||'',google_place_id:c?.google_place_id||'',lat:c?.lat||null,lng:c?.lng||null,google_maps_url:c?.google_maps_url||''})}}
- const submit=async e=>{e.preventDefault();setError('');try{if(isConsultationType(form.service_type)&&!form.lead_id&&!form.customer_id)throw new Error('Select a lead or existing client for this consultation.');if(!isConsultationType(form.service_type)&&!form.customer_id)throw new Error('Technical service bookings require a signed client.');const payload=formToAppointment(form);await saveAppointment(payload,editing);if(form.lead_id&&isConsultationType(form.service_type)){const l=leads.find(x=>x.id===form.lead_id);if(l&&!['signed','lost'].includes(l.stage))await saveLead({stage:'consultation_booked'},form.lead_id)}setOpen(false);setEditing(null);setNotice(editing?'Booking updated':'Booking created');setTimeout(()=>setNotice(''),2200);await load()}catch(e){setError(e.message.includes('appointment_no_overlap')?'This time overlaps another booking for the same person. Choose another time or assignee.':e.message)}}
+ const submit=async e=>{
+  e.preventDefault()
+  if(saveLock.current)return
+  setError('')
+  saveLock.current=true
+  setSaving(true)
+  try{
+   if(!form.customer_id&&!form.lead_id)throw new Error(isConsultationType(form.service_type)?'Select a lead or client for this consultation.':'Select a client for this service.')
+   const payload=formToAppointment(form)
+   await saveAppointment(payload,editing)
+   setOpen(false)
+   setEditing(null)
+   setNotice(editing?'Booking updated':'Booking created')
+   if(assignee!=='all'&&assignee!==form.assigned_user_id)setAssignee(form.assigned_user_id||'all')
+   if(form.date!==localDateKey(cursor))setCursor(studioDateCursor(payload.scheduled_at))
+   else await load().catch(()=>setNotice('Booking saved. Refresh the calendar to see it.'))
+  }catch(err){
+   setError(err.message?.includes('appointment_no_overlap')?'This time overlaps another booking. Choose another time or team member.':err.message||'Could not save booking.')
+  }finally{
+   saveLock.current=false
+   setSaving(false)
+  }
+ }
  const edit=x=>{setEditing(x.id);setForm(appointmentToForm(x));setError('');setOpen(true)}
  const move=async(a,date,time=null)=>{try{const newLocal=studioInstant(localDateKey(date),time||studioTime(a.scheduled_at));await saveAppointment({scheduled_at:newLocal.toISOString()},a.id);setNotice(`Moved to ${dateTime(newLocal)}`);setTimeout(()=>setNotice(''),2200);await load()}catch(e){alert(e.message.includes('appointment_no_overlap')?'That move conflicts with another booking for the same person.':e.message)}}
  const changeService=v=>{const home=v==='Free Home Consultation';const studioConsult=v==='Studio Consultation';setForm({...form,service_type:v,duration_min:serviceDurations[v]||60,customer_id:form.customer_id,lead_id:isConsultationType(v)?form.lead_id:'',location_type:home?'home':studioConsult?'studio':form.location_type,travel_buffer_before:home?30:studioConsult?0:form.travel_buffer_before,travel_buffer_after:home?30:studioConsult?0:form.travel_buffer_after})}
@@ -102,16 +144,16 @@ export default function Appointments({isAdmin,prefill,onStartService,onStartCons
     : <TimeGrid days={rangeDays} rowsByDay={byDay} onNew={openNew} onEdit={edit} onMove={move}/>)}
   {view==='agenda'&&<Agenda rowsByDay={Object.fromEntries(Object.entries(byDay).filter(([key])=>key.startsWith(localDateKey(cursor).slice(0,7))))} onEdit={edit}/>}
   {view==='map'&&<MapView home={home} selected={selectedMap} setSelected={setSelectedMap}/>}
-  <Drawer open={open} onClose={()=>setOpen(false)} title={editing?'Booking details':'New booking'} eyebrow="BOOKING"><form className="form-grid booking-form" onSubmit={submit}>
-   {error&&<div className="notice danger span-2">{error}</div>}
+  <Drawer open={open} onClose={()=>{if(!saveLock.current)setOpen(false)}} title={editing?'Booking details':'New booking'} eyebrow="BOOKING"><form className="form-grid booking-form" onSubmit={submit}>
+   {error&&<div ref={errorBox} tabIndex={-1} role="alert" className="notice danger span-2">{error}</div>}
    <Field label="Booking type"><select value={form.service_type} onChange={e=>changeService(e.target.value)}>{serviceTypes.map(x=><option key={x}>{x}</option>)}</select></Field>
    {isConsultationType(form.service_type)?<Field label="Lead / existing client"><BookingPersonPicker consultation leadId={form.lead_id} customerId={form.customer_id} leads={leads} customers={customers} onSelectLead={id=>id?selectConsultPerson(`lead:${id}`):setForm({...form,lead_id:''})} onSelectCustomer={id=>id?selectConsultPerson(`customer:${id}`):setForm({...form,customer_id:''})}/></Field>:<Field label="Signed client"><BookingPersonPicker consultation={false} leadId="" customerId={form.customer_id} leads={leads} customers={customers} onSelectLead={()=>{}} onSelectCustomer={id=>id?selectCustomer(id):setForm({...form,customer_id:'',address:'',place_name:'',google_place_id:'',lat:null,lng:null,google_maps_url:''})}/></Field>}
-   <Field label="Date"><input required type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></Field><Field label="Start time (MYT)"><input required type="time" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></Field>
-   <Field label="Duration"><div className="duration-row"><input type="number" min="15" step="15" value={form.duration_min} onChange={e=>setForm({...form,duration_min:e.target.value})}/><span>minutes</span></div></Field><Field label="Assigned to"><select value={form.assigned_user_id} onChange={e=>setForm({...form,assigned_user_id:e.target.value})}><option value="">Unassigned</option>{profiles.map(p=><option value={p.id} key={p.id}>{p.full_name}</option>)}</select></Field>
+   <div className="booking-schedule-pair"><Field label="Date"><input required type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></Field><Field label="Start time (MYT)"><input required type="time" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></Field></div>
+   <BookingDuration date={form.date} start={form.time} key={form.service_type} value={form.duration_min} onChange={duration_min=>setForm({...form,duration_min})}/><Field label="Assigned to"><select value={form.assigned_user_id} onChange={e=>setForm({...form,assigned_user_id:e.target.value})}><option value="">Unassigned</option>{profiles.map(p=><option value={p.id} key={p.id}>{p.full_name}</option>)}</select></Field>
    <Field label="Status">{form.status==='in_progress'?<div className="status-workflow-card"><div><Badge tone="warn">in progress</Badge><span>The {isConsultationType(form.service_type)?'consultation':'service'} has started. You can continue it, return it to Booked if started by mistake, or cancel it.</span></div><div className="status-workflow-actions"><button type="button" className="btn btn-ghost btn-sm" disabled={statusBusy} onClick={()=>resetActive('confirmed')}><RotateCcw size={14}/>Return to booked</button><button type="button" className="btn btn-danger-ghost btn-sm" disabled={statusBusy} onClick={()=>resetActive('cancelled')}><Ban size={14}/>Cancel</button></div></div>:form.status==='completed'?<div className="status-readonly"><Badge tone="success">completed</Badge><span>Completed work is locked because it may already have sales, stock or payment records.</span></div>:<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{['tentative','confirmed','cancelled','no-show'].map(x=><option key={x}>{x.replace('_',' ')}</option>)}</select>}</Field><Field label="Location"><select value={form.location_type} onChange={e=>setForm({...form,location_type:e.target.value})}><option value="studio">Studio</option><option value="home">Home visit</option></select></Field>
    {form.location_type==='home'&&<><Field label="Travel buffer"><div className="dual-input"><input title="Before" type="number" min="0" step="15" value={form.travel_buffer_before} onChange={e=>setForm({...form,travel_buffer_before:e.target.value})}/><input title="After" type="number" min="0" step="15" value={form.travel_buffer_after} onChange={e=>setForm({...form,travel_buffer_after:e.target.value})}/></div></Field><div className="span-2"><PlaceAutocomplete value={{place_name:form.place_name,formatted_address:form.address,google_place_id:form.google_place_id,lat:form.lat,lng:form.lng,google_maps_url:form.google_maps_url}} onChange={p=>setForm({...form,address:p.formatted_address,place_name:p.place_name,google_place_id:p.google_place_id,lat:p.lat,lng:p.lng,google_maps_url:p.google_maps_url})}/></div><Field label="Address"><textarea value={form.address||''} onChange={e=>setForm({...form,address:e.target.value})}/></Field></>}
    <Field label="Notes"><textarea value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})}/></Field>
-   <div className="form-actions booking-actions">{isAdmin&&editing&&!['in_progress','completed'].includes(form.status)&&<button type="button" className="btn btn-danger-ghost" onClick={removeBooking}><Trash2 size={16}/>Delete</button>}{editing&&['tentative','confirmed','in_progress'].includes(form.status)&&<button type="button" className="btn btn-service" onClick={action}><Play size={16}/>{form.status==='in_progress'?'Continue ': 'Start '}{isConsultationType(form.service_type)?'consultation':'service'}</button>}<span className="grow"/><button type="button" className="btn btn-ghost" onClick={()=>setOpen(false)}>Cancel</button><button className="btn btn-primary">Save booking</button></div>
+   <div className="form-actions booking-actions">{isAdmin&&editing&&!['in_progress','completed'].includes(form.status)&&<button type="button" className="btn btn-danger-ghost" onClick={removeBooking}><Trash2 size={16}/>Delete</button>}{editing&&['tentative','confirmed','in_progress'].includes(form.status)&&<button type="button" className="btn btn-service" onClick={action}><Play size={16}/>{form.status==='in_progress'?'Continue ': 'Start '}{isConsultationType(form.service_type)?'consultation':'service'}</button>}<span className="grow"/><button type="button" disabled={saving} className="btn btn-ghost" onClick={()=>setOpen(false)}>Cancel</button><button disabled={saving} className="btn btn-primary">{saving?'Saving…':'Save booking'}</button></div>
   </form></Drawer>
  </div>
 }

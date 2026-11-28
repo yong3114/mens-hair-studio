@@ -26,7 +26,7 @@ export const formToAppointment = (f) => ({
   service_type:f.service_type||'Maintenance',scheduled_at:studioInstant(f.date,f.time).toISOString(),duration_min:Number(f.duration_min||60),
   assigned_user_id:f.assigned_user_id||null,location_type:f.location_type||'studio',address:f.address?.trim()||null,place_name:f.place_name?.trim()||null,
   google_place_id:f.google_place_id?.trim()||null,lat:f.lat===''||f.lat==null?null:Number(f.lat),lng:f.lng===''||f.lng==null?null:Number(f.lng),google_maps_url:f.google_maps_url?.trim()||null,
-  status:f.status||'confirmed',notes:f.notes?.trim()||null,travel_buffer_before:Number(f.travel_buffer_before||0),travel_buffer_after:Number(f.travel_buffer_after||0)
+  status:f.status||'confirmed',notes:f.notes?.trim()||null,travel_buffer_before:f.location_type==='home'?Number(f.travel_buffer_before||0):0,travel_buffer_after:f.location_type==='home'?Number(f.travel_buffer_after||0):0
 })
 
 export function monthCells(cursor){const first=new Date(cursor.getFullYear(),cursor.getMonth(),1);const start=startOfWeek(first,true);return Array.from({length:42},(_,i)=>addDays(start,i))}

@@ -23,3 +23,9 @@
 }
 .booking-schedule-pair{display:grid;grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .booking-schedule-pair .field,.booking-schedule-pair input{min-width:0;max-width:100%}
+.booking-status-edit{display:contents}
+@media(max-width:820px){
+ .drawer .booking-form .booking-actions{display:grid;grid-template-columns:1fr 1fr}
+ .drawer .booking-form .booking-actions .btn-service,.drawer .booking-form .booking-actions .btn-danger-ghost{grid-column:1/-1}
+ .drawer .booking-form .booking-actions .btn{min-height:44px}
+}

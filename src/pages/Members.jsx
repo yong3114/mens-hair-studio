@@ -20,7 +20,14 @@ const storageKey='studio-member-access'
 export default function Members({previewId,onExit,onRecords}){
  const [ticket,setTicket]=useState(()=>previewId?'':new URLSearchParams(window.location.hash.slice(1)).get('setup')||'')
  const [key,setKey]=useState(()=>previewId||ticket?'':sessionStorage.getItem(storageKey)||''),[data,setData]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false)
- const [page,setPage]=useState('home')
+ const readPage=()=>['booking','wallet'].includes(window.history.state?.memberTab)?window.history.state.memberTab:'home'
+ const [page,setPage]=useState(()=>previewId?'home':readPage())
+ useEffect(()=>{
+  if(previewId)return
+  const back=()=>{setPage(readPage());setMessage('');setError('')}
+  window.addEventListener('popstate',back)
+  return ()=>window.removeEventListener('popstate',back)
+ },[previewId])
  const lock=useRef(false),request=useRef(null),readVersion=useRef(0)
  const [syncError,setSyncError]=useState('')
  const refresh=useCallback(async()=>{
@@ -42,7 +49,9 @@ export default function Members({previewId,onExit,onRecords}){
   refresh();window.addEventListener('focus',poll);const timer=setInterval(poll,30000)
   return()=>{++readVersion.current;window.removeEventListener('focus',poll);clearInterval(timer)}
  },[key,previewId,refresh])
- function navigate(next){setPage(next);setMessage('');setError('');window.scrollTo(0,0)}
+ function navigate(next){
+  if(!previewId&&next!==page)window.history.pushState({...window.history.state,memberTab:next},'')
+  setPage(next);setMessage('');setError('');window.scrollTo(0,0)}
  async function act(id){
   if(previewId||syncError||lock.current)return
   const item=data.offers.find(entry=>entry.id===id)
@@ -56,7 +65,7 @@ export default function Members({previewId,onExit,onRecords}){
   }catch(e){setError(e.message)}finally{try{await refresh()}catch(e){setError(e.message)}lock.current=false;setBusy(false)}
  }
  if((previewId||key)&&!data)return <div className="portal-main">{previewId&&<button className="btn btn-ghost" onClick={onExit}>Back to client</button>}<p role="status">{syncError||"Loading member view…"}</p>{syncError&&<button className="btn btn-ghost" onClick={refresh}>Retry</button>}</div>
- if((!previewId&&!key)||!data)return <MemberLogin initialNotice={error} ticket={ticket} onExitSetup={()=>{sessionStorage.removeItem(storageKey);setTicket('')}} onComplete={(k,result)=>{sessionStorage.setItem(storageKey,k);setError('');setData(result);setKey(k)}}/>
+ if((!previewId&&!key)||!data)return <MemberLogin initialNotice={error} ticket={ticket} onExitSetup={()=>{sessionStorage.removeItem(storageKey);setTicket('')}} onComplete={(k,result)=>{window.history.replaceState({...window.history.state,memberTab:'home'},'');setPage('home');sessionStorage.setItem(storageKey,k);setError('');setData(result);setKey(k)}}/>
  const c=data.profile||{},upcoming=data.visits[0],systems=data.systems,pending=data.requests||[]
  return <div className="portal-shell member-layout"><header className="portal-preview-bar"><strong>{previewId?'Customer view · Read only':'Member account'}</strong>{previewId?<div><button className="btn btn-ghost" onClick={onRecords}>Client records</button> <button className="btn btn-ghost" onClick={onExit}>Back to client</button></div>:<button className="btn btn-ghost" onClick={async()=>{try{await call('member_end_session',{p_key:key})}catch{setError('Unable to sign out. Check your connection and retry.');return}sessionStorage.removeItem(storageKey);setKey('');setData(null);setPage('home');setMessage('');setError('')}}>Sign out</button>}</header><main className="portal-main">{syncError&&<div role="alert" className="notice"><span>{syncError}</span> <button className="btn btn-ghost" onClick={refresh}>Retry</button></div>}
  {page==='home'&&<><section className="portal-hero"><span className="portal-kicker">MY HAIR STUDIO</span><h1>Hi, {data.name}</h1></section>
